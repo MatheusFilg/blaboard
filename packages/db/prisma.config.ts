@@ -12,4 +12,7 @@ export default {
   migrations: {
     path: path.join("prisma", "migrations"),
   },
+  datasource: {
+    url: process.env.DATABASE_URL!,
+  },
 } satisfies PrismaConfig;
