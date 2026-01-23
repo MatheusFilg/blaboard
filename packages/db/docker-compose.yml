@@ -1,17 +1,17 @@
-name: beroboard
+name: blaboard
 
 services:
   mongodb:
     image: mongo
-    container_name: beroboard-mongodb
+    container_name: blaboard-mongodb
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: password
-      MONGO_INITDB_DATABASE: beroboard
+      MONGO_INITDB_DATABASE: blaboard
     ports:
       - "27017:27017"
     volumes:
-      - beroboard_mongodb_data:/data/db
+      - blaboard_mongodb_data:/data/db
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
@@ -20,4 +20,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  beroboard_mongodb_data:
+  blaboard_mongodb_data:

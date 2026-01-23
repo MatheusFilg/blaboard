@@ -1,5 +1,5 @@
 {
-	"name": "@beroboard/auth",
+	"name": "@blaboard/auth",
 	"type": "module",
 	"exports": {
 		".": {
@@ -11,14 +11,14 @@
 	},
 	"scripts": {},
 	"dependencies": {
-		"@beroboard/db": "workspace:*",
-		"@beroboard/env": "workspace:*",
+		"@blaboard/db": "workspace:*",
+		"@blaboard/env": "workspace:*",
 		"better-auth": "catalog:",
 		"dotenv": "catalog:",
 		"zod": "catalog:"
 	},
 	"devDependencies": {
-		"@beroboard/config": "workspace:*",
+		"@blaboard/config": "workspace:*",
 		"typescript": "catalog:"
 	}
 }
