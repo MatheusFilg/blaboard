@@ -1,15 +1,22 @@
+enum Role {
+  ADMIN
+  WRITER
+  READER
+}
+
 model User {
-  id            String         @id @map("_id")
-  name          String
-  email         String
-  emailVerified Boolean        @default(false)
-  image         String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-  organizations Organization[] @relation(fields: [organizationIds], references: [id])
+  id              String         @id @map("_id")
+  name            String
+  email           String
+  emailVerified   Boolean        @default(false)
+  image           String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  sessions        Session[]
+  accounts        Account[]
+  organizations   Organization[] @relation(fields: [organizationIds], references: [id])
   organizationIds String[]
+  role            Role
 
   @@unique([email])
   @@map("user")
