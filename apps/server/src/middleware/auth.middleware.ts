@@ -1,5 +1,5 @@
 import { Elysia } from "elysia";
-import { auth } from "@beroboard/auth";
+import { auth } from "@blaboard/auth";
 
 export const authMiddleware = new Elysia({ name: "auth-middleware" })
   .derive(async ({ request, cookie }) => {
