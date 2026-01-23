@@ -1,25 +1,23 @@
-import { auth } from "@beroboard/auth";
-import { env } from "@beroboard/env/server";
+import { env } from "@blaboard/env/server";
 import { cors } from "@elysiajs/cors";
 import { Elysia } from "elysia";
+import { authMiddleware } from "./middleware/auth.middleware";
+import { authPlugin } from "./plugins/auth.plugin";
 
 const app = new Elysia()
-  .use(
-    cors({
-      origin: env.CORS_ORIGIN,
-      methods: ["GET", "POST", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization"],
-      credentials: true,
-    }),
-  )
-  .all("/api/auth/*", async (context) => {
-    const { request, status } = context;
-    if (["POST", "GET"].includes(request.method)) {
-      return auth.handler(request);
-    }
-    return status(405);
-  })
-  .get("/", () => "OK")
-  .listen(3000, () => {
-    console.log("Server is running on http://localhost:3000");
-  });
+	.use(
+		cors({
+			origin: env.CORS_ORIGIN,
+			methods: ["GET", "POST", "OPTIONS"],
+			allowedHeaders: ["Content-Type", "Authorization"],
+			credentials: true,
+		}),
+	)
+	.use(authPlugin)
+	.use(authMiddleware)
+	.get("/", () => ({ message: "API is running" }))
+	.listen(env.PORT, () => {
+		console.log(`Server is running on http://localhost:${env.PORT}`);
+	});
+
+export type App = typeof app;

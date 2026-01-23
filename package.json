@@ -1,5 +1,5 @@
 {
-	"name": "beroboard",
+	"name": "blaboard",
 	"private": true,
 	"workspaces": {
 		"packages": [
@@ -23,24 +23,25 @@
 		"dev:native": "turbo -F native dev",
 		"dev:web": "turbo -F web dev",
 		"dev:server": "turbo -F server dev",
-		"db:push": "turbo -F @beroboard/db db:push",
-		"db:studio": "turbo -F @beroboard/db db:studio",
-		"db:generate": "turbo -F @beroboard/db db:generate",
-		"db:migrate": "turbo -F @beroboard/db db:migrate",
-		"db:start": "turbo -F @beroboard/db db:start",
-		"db:watch": "turbo -F @beroboard/db db:watch",
-		"db:stop": "turbo -F @beroboard/db db:stop",
-		"db:down": "turbo -F @beroboard/db db:down",
+		"db:push": "turbo -F @blaboard/db db:push",
+		"db:studio": "turbo -F @blaboard/db db:studio",
+		"db:generate": "turbo -F @blaboard/db db:generate",
+		"db:migrate": "turbo -F @blaboard/db db:migrate",
+		"db:start": "turbo -F @blaboard/db db:start",
+		"db:watch": "turbo -F @blaboard/db db:watch",
+		"db:stop": "turbo -F @blaboard/db db:stop",
+		"db:down": "turbo -F @blaboard/db db:down",
 		"check": "biome check --write .",
-		"prepare": "husky"
+		"prepare": "husky",
+		"lint": "biome check --write ."
 	},
 	"dependencies": {
-		"@beroboard/env": "workspace:*",
+		"@blaboard/env": "workspace:*",
 		"dotenv": "catalog:",
 		"zod": "catalog:"
 	},
 	"devDependencies": {
-		"@beroboard/config": "workspace:*",
+		"@blaboard/config": "workspace:*",
 		"@biomejs/biome": "^2.2.0",
 		"@types/bun": "catalog:",
 		"husky": "^9.1.7",
