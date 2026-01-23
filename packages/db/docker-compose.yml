@@ -2,21 +2,38 @@ name: blaboard
 
 services:
   mongodb:
-    image: mongo
+    image: mongo:7
     container_name: blaboard-mongodb
+    entrypoint:
+      - bash
+      - -c
+      - |
+        openssl rand -base64 756 > /etc/mongo-keyfile
+        chmod 400 /etc/mongo-keyfile
+        chown 999:999 /etc/mongo-keyfile
+        exec docker-entrypoint.sh $$@
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--port", "27017", "--keyFile", "/etc/mongo-keyfile"]
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: password
       MONGO_INITDB_DATABASE: blaboard
     ports:
       - "27017:27017"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - blaboard_mongodb_data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: >
+        mongosh
+        -u root
+        -p password
+        --authenticationDatabase admin
+        --eval "try { rs.status() } catch (e) { rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'localhost:27017' }] }) }"
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 5s
     restart: unless-stopped
 
 volumes:
