@@ -48,3 +48,11 @@ coverage
 .cache
 tmp
 temp
+
+# IDE stuff
+.vscode
+.cursor
+.zed
+.claude
+.gemini
+.idea
