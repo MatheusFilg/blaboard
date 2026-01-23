@@ -1,6 +1,6 @@
-# Beroboard - AI Agent & Developer Guide
+# blaboard - AI Agent & Developer Guide
 
-This document serves as the primary context source for AI agents and developers working on the **Beroboard** project. It outlines the architectural patterns, technology stack, and specifically the authentication implementation details.
+This document serves as the primary context source for AI agents and developers working on the **blaboard** project. It outlines the architectural patterns, technology stack, and specifically the authentication implementation details.
 
 ## 🏗 Project Architecture
 
