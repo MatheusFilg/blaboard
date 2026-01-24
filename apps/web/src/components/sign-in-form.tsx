@@ -1,6 +1,6 @@
 "use client";
 
-import { Github } from "lucide-react";
+import { GithubLogo, GoogleLogo } from "@phosphor-icons/react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -19,7 +19,7 @@ export default function SignInForm() {
 			},
 			{
 				onSuccess: () => {
-					toast.success("Login realizado com sucesso");
+					toast.success("Signed in successfully");
 				},
 				onError: (error) => {
 					toast.error(error.error.message || error.error.statusText);
@@ -33,11 +33,15 @@ export default function SignInForm() {
 	}
 
 	return (
-		<div className="flex w-[400px] flex-col items-center gap-8">
+		<div className="flex w-full max-w-sm flex-col items-center gap-8">
 			{/* Header */}
-			<div className="flex w-full flex-col items-center gap-2">
-				<h1 className="font-bold text-2xl text-white">Bem-vindo de volta</h1>
-				<p className="text-zinc-400">Entre com sua conta para continuar</p>
+			<div className="flex flex-col items-center gap-2 text-center">
+				<h1 className="font-semibold text-2xl text-foreground tracking-tight">
+					Welcome back
+				</h1>
+				<p className="text-muted-foreground text-sm">
+					Sign in to continue to Blaboard
+				</p>
 			</div>
 
 			{/* Social Buttons */}
@@ -45,32 +49,32 @@ export default function SignInForm() {
 				<button
 					type="button"
 					onClick={() => handleSocialSignIn("google")}
-					className="flex h-[52px] w-full items-center justify-center gap-3 rounded-xl border border-zinc-700 bg-zinc-800 font-medium text-white transition-colors hover:bg-zinc-700"
+					className="flex h-11 w-full items-center justify-center gap-3 rounded-lg border border-border bg-card font-medium text-foreground text-sm transition-colors hover:bg-accent"
 				>
-					<span className="font-bold text-[#4285F4] text-xl">G</span>
-					<span>Continuar com Google</span>
+					<GoogleLogo className="h-5 w-5" weight="bold" />
+					<span>Continue with Google</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={() => handleSocialSignIn("github")}
-					className="flex h-[52px] w-full items-center justify-center gap-3 rounded-xl border border-zinc-700 bg-zinc-800 font-medium text-white transition-colors hover:bg-zinc-700"
+					className="flex h-11 w-full items-center justify-center gap-3 rounded-lg border border-border bg-card font-medium text-foreground text-sm transition-colors hover:bg-accent"
 				>
-					<Github className="h-5 w-5" />
-					<span>Continuar com GitHub</span>
+					<GithubLogo className="h-5 w-5" weight="bold" />
+					<span>Continue with GitHub</span>
 				</button>
 			</div>
 
 			{/* Footer */}
-			<div className="flex items-center gap-1.5">
-				<span className="text-sm text-zinc-400">Não tem uma conta?</span>
+			<p className="text-muted-foreground text-sm">
+				Don't have an account?{" "}
 				<Link
 					href="/register"
-					className="font-semibold text-indigo-500 text-sm hover:text-indigo-400"
+					className="font-medium text-foreground underline-offset-4 hover:underline"
 				>
-					Criar conta
+					Sign up
 				</Link>
-			</div>
+			</p>
 		</div>
 	);
 }
