@@ -1,12 +1,12 @@
 "use client";
 
 import AuthLayout from "@/components/auth-layout";
-import SignInForm from "@/components/sign-in-form";
+import SignUpForm from "@/components/sign-up-form";
 
-export default function LoginPage() {
+export default function RegisterPage() {
 	return (
 		<AuthLayout>
-			<SignInForm />
+			<SignUpForm />
 		</AuthLayout>
 	);
 }
