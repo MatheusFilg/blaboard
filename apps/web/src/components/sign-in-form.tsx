@@ -1,17 +1,14 @@
-import { useRouter } from "next/navigation";
+"use client";
+
+import { GithubLogo, GoogleLogo } from "@phosphor-icons/react";
+import Link from "next/link";
 import { toast } from "sonner";
 
 import { authClient } from "@/lib/auth-client";
 
 import Loader from "./loader";
-import { Button } from "./ui/button";
 
-export default function SignInForm({
-	onSwitchToSignUp,
-}: {
-	onSwitchToSignUp: () => void;
-}) {
-	const router = useRouter();
+export default function SignInForm() {
 	const { isPending } = authClient.useSession();
 
 	const handleSocialSignIn = async (provider: "google" | "github") => {
@@ -22,7 +19,7 @@ export default function SignInForm({
 			},
 			{
 				onSuccess: () => {
-					toast.success("Sign in successful");
+					toast.success("Signed in successfully");
 				},
 				onError: (error) => {
 					toast.error(error.error.message || error.error.statusText);
@@ -36,35 +33,48 @@ export default function SignInForm({
 	}
 
 	return (
-		<div className="mx-auto mt-10 w-full max-w-md p-6">
-			<h1 className="mb-6 text-center font-bold text-3xl">Welcome Back</h1>
+		<div className="flex w-full max-w-sm flex-col items-center gap-8">
+			{/* Header */}
+			<div className="flex flex-col items-center gap-2 text-center">
+				<h1 className="font-semibold text-2xl text-foreground tracking-tight">
+					Welcome back
+				</h1>
+				<p className="text-muted-foreground text-sm">
+					Sign in to continue to Blaboard
+				</p>
+			</div>
 
-			<div className="space-y-4">
-				<Button
-					className="w-full"
-					variant="outline"
+			{/* Social Buttons */}
+			<div className="flex w-full flex-col gap-3">
+				<button
+					type="button"
 					onClick={() => handleSocialSignIn("google")}
+					className="flex h-11 w-full items-center justify-center gap-3 rounded-lg border border-border bg-card font-medium text-foreground text-sm transition-colors hover:bg-accent"
 				>
-					Continue with Google
-				</Button>
-				<Button
-					className="w-full"
-					variant="outline"
+					<GoogleLogo className="h-5 w-5" weight="bold" />
+					<span>Continue with Google</span>
+				</button>
+
+				<button
+					type="button"
 					onClick={() => handleSocialSignIn("github")}
+					className="flex h-11 w-full items-center justify-center gap-3 rounded-lg border border-border bg-card font-medium text-foreground text-sm transition-colors hover:bg-accent"
 				>
-					Continue with GitHub
-				</Button>
+					<GithubLogo className="h-5 w-5" weight="bold" />
+					<span>Continue with GitHub</span>
+				</button>
 			</div>
 
-			<div className="mt-4 text-center">
-				<Button
-					variant="link"
-					onClick={onSwitchToSignUp}
-					className="text-indigo-600 hover:text-indigo-800"
+			{/* Footer */}
+			<p className="text-muted-foreground text-sm">
+				Don't have an account?{" "}
+				<Link
+					href="/register"
+					className="font-medium text-foreground underline-offset-4 hover:underline"
 				>
-					Need an account? Sign Up
-				</Button>
-			</div>
+					Sign up
+				</Link>
+			</p>
 		</div>
 	);
 }
