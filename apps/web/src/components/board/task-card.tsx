@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +16,7 @@ export interface TaskAssignee {
 }
 
 export interface TaskCardProps {
+	id?: string;
 	title: string;
 	description?: string;
 	priority?: "high" | "medium" | "low" | "none";
@@ -31,6 +33,7 @@ const priorityColors = {
 };
 
 export function TaskCard({
+	id = "1",
 	title,
 	description,
 	priority = "none",
@@ -39,7 +42,10 @@ export function TaskCard({
 	completed = false,
 }: TaskCardProps) {
 	return (
-		<div className="flex cursor-pointer flex-col gap-3 rounded-xl border border-[#2A2A2E] bg-[#16161A] p-4 transition-colors hover:border-[#3A3A3E] hover:bg-[#1A1A1E]">
+		<Link
+			href={`/task/${id}`}
+			className="flex cursor-pointer flex-col gap-3 rounded-xl border border-[#2A2A2E] bg-[#16161A] p-4 transition-colors hover:border-[#3A3A3E] hover:bg-[#1A1A1E]"
+		>
 			{/* Header */}
 			<div className="flex items-center gap-2">
 				{completed ? (
@@ -103,6 +109,6 @@ export function TaskCard({
 					)}
 				</div>
 			)}
-		</div>
+		</Link>
 	);
 }
