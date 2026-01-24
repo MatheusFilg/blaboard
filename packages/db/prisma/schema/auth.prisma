@@ -18,6 +18,9 @@ model User {
   organizationIds String[]
   role            Role
 
+  assignedTasks Task[]
+  createdTasks  Task[] @relation("TaskCreatedBy")
+
   @@unique([email])
   @@map("user")
 }
