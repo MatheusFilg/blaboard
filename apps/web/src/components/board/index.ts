@@ -3,3 +3,4 @@ export { TaskCard, type TaskCardProps, type TaskLabel, type TaskAssignee } from 
 export { KanbanColumn } from "./kanban-column";
 export { BoardHeader } from "./board-header";
 export { TaskBoard } from "./task-board";
+export { CreateTaskModal } from "./create-task-modal";
