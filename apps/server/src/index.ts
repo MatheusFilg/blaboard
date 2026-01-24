@@ -3,12 +3,14 @@ import { cors } from "@elysiajs/cors";
 import { Elysia } from "elysia";
 import { authMiddleware } from "./middleware/auth.middleware";
 import { authPlugin } from "./plugins/auth.plugin";
+import { columnsRouter } from "./modules/columns/router";
+import { tasksRouter } from "./modules/tasks/router";
 
 const app = new Elysia()
 	.use(
 		cors({
 			origin: env.CORS_ORIGIN,
-			methods: ["GET", "POST", "OPTIONS"],
+			methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 			allowedHeaders: ["Content-Type", "Authorization"],
 			credentials: true,
 		}),
@@ -16,6 +18,8 @@ const app = new Elysia()
 	.use(authPlugin)
 	.use(authMiddleware)
 	.get("/", () => ({ message: "API is running" }))
+	.use(columnsRouter)
+	.use(tasksRouter)
 	.listen(env.PORT, () => {
 		console.log(`Server is running on http://localhost:${env.PORT}`);
 	});
