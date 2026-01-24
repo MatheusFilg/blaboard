@@ -1,13 +1,33 @@
 "use client";
 
+import { useState } from "react";
 import {
+	Building2,
+	Check,
 	ChevronsUpDown,
 	LayoutGrid,
 	List,
+	Plus,
 	Settings,
 	Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+interface Company {
+	id: string;
+	name: string;
+	initials: string;
+	color: string;
+}
 
 interface Project {
 	id: string;
@@ -26,6 +46,13 @@ interface SidebarProps {
 	className?: string;
 }
 
+const companies: Company[] = [
+	{ id: "1", name: "Acme Inc", initials: "A", color: "#6366F1" },
+	{ id: "2", name: "Stark Industries", initials: "SI", color: "#E85A4F" },
+	{ id: "3", name: "Wayne Enterprises", initials: "WE", color: "#32D583" },
+	{ id: "4", name: "Umbrella Corp", initials: "UC", color: "#FFB547" },
+];
+
 const navItems: NavItem[] = [
 	{ icon: <LayoutGrid className="size-5" />, label: "Board", active: true },
 	{ icon: <List className="size-5" />, label: "Tasks" },
@@ -40,6 +67,8 @@ const projects: Project[] = [
 ];
 
 export function Sidebar({ className }: SidebarProps) {
+	const [selectedCompany, setSelectedCompany] = useState<Company>(companies[0]);
+
 	return (
 		<aside
 			className={cn(
@@ -57,19 +86,63 @@ export function Sidebar({ className }: SidebarProps) {
 					<span className="text-lg font-bold text-[#FAFAF9]">BeroBoard</span>
 				</div>
 
-				{/* Org Selector */}
-				<button
-					type="button"
-					className="flex h-11 items-center justify-between rounded-lg border border-[#2A2A2E] bg-[#16161A] px-3"
-				>
-					<div className="flex items-center gap-2.5">
-						<div className="flex size-7 items-center justify-center rounded-md bg-[#6366F1]">
-							<span className="text-[13px] font-semibold text-white">A</span>
+				{/* Company Selector Dropdown */}
+				<DropdownMenu>
+					<DropdownMenuTrigger className="flex h-11 w-full items-center justify-between rounded-lg border border-[#2A2A2E] bg-[#16161A] px-3 outline-none transition-colors hover:border-[#3A3A3E] focus:border-[#6366F1]">
+						<div className="flex items-center gap-2.5">
+							<div
+								className="flex size-7 items-center justify-center rounded-md"
+								style={{ backgroundColor: selectedCompany.color }}
+							>
+								<span className="text-[13px] font-semibold text-white">
+									{selectedCompany.initials}
+								</span>
+							</div>
+							<span className="text-sm font-medium text-[#FAFAF9]">
+								{selectedCompany.name}
+							</span>
 						</div>
-						<span className="text-sm font-medium text-[#FAFAF9]">Acme Inc</span>
-					</div>
-					<ChevronsUpDown className="size-4 text-[#4A4A50]" />
-				</button>
+						<ChevronsUpDown className="size-4 text-[#4A4A50]" />
+					</DropdownMenuTrigger>
+					<DropdownMenuContent
+						className="w-[200px] rounded-lg border border-[#2A2A2E] bg-[#1A1A1E] p-1"
+						align="start"
+						sideOffset={8}
+					>
+						<DropdownMenuGroup>
+							<DropdownMenuLabel className="px-2 py-1.5 text-xs font-semibold text-[#6B6B70]">
+								Companies
+							</DropdownMenuLabel>
+							{companies.map((company) => (
+								<DropdownMenuItem
+									key={company.id}
+									className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-2 text-[#FAFAF9] hover:bg-[#16161A] focus:bg-[#16161A]"
+									onClick={() => setSelectedCompany(company)}
+								>
+									<div
+										className="flex size-6 items-center justify-center rounded-md"
+										style={{ backgroundColor: company.color }}
+									>
+										<span className="text-[11px] font-semibold text-white">
+											{company.initials}
+										</span>
+									</div>
+									<span className="flex-1 text-sm">{company.name}</span>
+									{selectedCompany.id === company.id && (
+										<Check className="size-4 text-[#6366F1]" />
+									)}
+								</DropdownMenuItem>
+							))}
+						</DropdownMenuGroup>
+						<DropdownMenuSeparator className="my-1 bg-[#2A2A2E]" />
+						<DropdownMenuItem className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-2 text-[#6B6B70] hover:bg-[#16161A] hover:text-[#FAFAF9] focus:bg-[#16161A] focus:text-[#FAFAF9]">
+							<div className="flex size-6 items-center justify-center rounded-md border border-dashed border-[#4A4A50]">
+								<Plus className="size-3.5" />
+							</div>
+							<span className="text-sm">Create company</span>
+						</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
 
 				{/* Navigation */}
 				<nav className="flex flex-col gap-1">

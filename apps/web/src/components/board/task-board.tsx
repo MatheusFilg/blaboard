@@ -1,8 +1,10 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { Sidebar } from "./sidebar";
 import { BoardHeader } from "./board-header";
 import { KanbanColumn } from "./kanban-column";
+import { CreateTaskModal } from "./create-task-modal";
 import type { TaskCardProps } from "./task-card";
 
 // Sample data based on the Pencil design
@@ -107,7 +109,44 @@ const doneTasks: TaskCardProps[] = [
 	},
 ];
 
+function filterTasks(tasks: TaskCardProps[], query: string): TaskCardProps[] {
+	if (!query.trim()) return tasks;
+	const lowerQuery = query.toLowerCase();
+	return tasks.filter(
+		(task) =>
+			task.title.toLowerCase().includes(lowerQuery) ||
+			task.description?.toLowerCase().includes(lowerQuery) ||
+			task.label?.text.toLowerCase().includes(lowerQuery),
+	);
+}
+
 export function TaskBoard() {
+	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [searchQuery, setSearchQuery] = useState("");
+
+	const filteredBacklog = useMemo(
+		() => filterTasks(backlogTasks, searchQuery),
+		[searchQuery],
+	);
+	const filteredInProgress = useMemo(
+		() => filterTasks(inProgressTasks, searchQuery),
+		[searchQuery],
+	);
+	const filteredReview = useMemo(
+		() => filterTasks(reviewTasks, searchQuery),
+		[searchQuery],
+	);
+	const filteredDone = useMemo(
+		() => filterTasks(doneTasks, searchQuery),
+		[searchQuery],
+	);
+
+	const totalTasks =
+		filteredBacklog.length +
+		filteredInProgress.length +
+		filteredReview.length +
+		filteredDone.length;
+
 	return (
 		<div className="flex h-screen overflow-hidden bg-[#0B0B0E]">
 			<Sidebar />
@@ -116,33 +155,42 @@ export function TaskBoard() {
 			<main className="flex flex-1 flex-col gap-6 overflow-hidden p-6">
 				<BoardHeader
 					title="Project Overview"
-					subtitle="12 tasks · 4 team members"
+					subtitle={`${totalTasks} tasks · 4 team members`}
+					searchQuery={searchQuery}
+					onSearchChange={setSearchQuery}
+					onNewTask={() => setIsModalOpen(true)}
 				/>
 
 				{/* Board Area */}
 				<div className="flex flex-1 gap-4 overflow-x-auto">
 					<KanbanColumn
 						title="Backlog"
-						count={3}
-						tasks={backlogTasks}
+						count={filteredBacklog.length}
+						tasks={filteredBacklog}
 					/>
 					<KanbanColumn
 						title="In Progress"
-						count={5}
-						tasks={inProgressTasks}
+						count={filteredInProgress.length}
+						tasks={filteredInProgress}
 					/>
 					<KanbanColumn
 						title="Review"
-						count={3}
-						tasks={reviewTasks}
+						count={filteredReview.length}
+						tasks={filteredReview}
 					/>
 					<KanbanColumn
 						title="Done"
-						count={2}
-						tasks={doneTasks}
+						count={filteredDone.length}
+						tasks={filteredDone}
 					/>
 				</div>
 			</main>
+
+			{/* Create Task Modal */}
+			<CreateTaskModal
+				isOpen={isModalOpen}
+				onClose={() => setIsModalOpen(false)}
+			/>
 		</div>
 	);
 }

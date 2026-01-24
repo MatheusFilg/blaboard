@@ -39,7 +39,7 @@ export function TaskCard({
 	completed = false,
 }: TaskCardProps) {
 	return (
-		<div className="flex flex-col gap-3 rounded-xl border border-[#2A2A2E] bg-[#16161A] p-4">
+		<div className="flex cursor-pointer flex-col gap-3 rounded-xl border border-[#2A2A2E] bg-[#16161A] p-4 transition-colors hover:border-[#3A3A3E] hover:bg-[#1A1A1E]">
 			{/* Header */}
 			<div className="flex items-center gap-2">
 				{completed ? (
