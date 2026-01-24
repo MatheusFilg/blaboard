@@ -1,6 +1,6 @@
 "use client";
 
-import { Apple, Github } from "lucide-react";
+import { GithubLogo, GoogleLogo } from "@phosphor-icons/react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -19,7 +19,7 @@ export default function SignUpForm() {
 			},
 			{
 				onSuccess: () => {
-					toast.success("Conta criada com sucesso");
+					toast.success("Account created successfully");
 				},
 				onError: (error) => {
 					toast.error(error.error.message || error.error.statusText);
@@ -33,11 +33,15 @@ export default function SignUpForm() {
 	}
 
 	return (
-		<div className="flex w-[400px] flex-col items-center gap-8">
+		<div className="flex w-full max-w-sm flex-col items-center gap-8">
 			{/* Header */}
-			<div className="flex w-full flex-col items-center gap-2">
-				<h1 className="font-bold text-2xl text-white">Criar sua conta</h1>
-				<p className="text-zinc-400">Comece a organizar seus projetos agora</p>
+			<div className="flex flex-col items-center gap-2 text-center">
+				<h1 className="font-semibold text-2xl text-foreground tracking-tight">
+					Create an account
+				</h1>
+				<p className="text-muted-foreground text-sm">
+					Get started with Blaboard
+				</p>
 			</div>
 
 			{/* Social Buttons */}
@@ -45,50 +49,44 @@ export default function SignUpForm() {
 				<button
 					type="button"
 					onClick={() => handleSocialSignIn("google")}
-					className="flex h-[52px] w-full items-center justify-center gap-3 rounded-xl border border-zinc-700 bg-zinc-800 font-medium text-white transition-colors hover:bg-zinc-700"
+					className="flex h-11 w-full items-center justify-center gap-3 rounded-lg border border-border bg-card font-medium text-foreground text-sm transition-colors hover:bg-accent"
 				>
-					<span className="font-bold text-[#4285F4] text-xl">G</span>
-					<span>Registrar com Google</span>
-				</button>
-
-				<button
-					type="button"
-					disabled
-					className="flex h-[52px] w-full cursor-not-allowed items-center justify-center gap-3 rounded-xl border border-zinc-700 bg-zinc-800 font-medium text-white opacity-50"
-				>
-					<Apple className="h-5 w-5" />
-					<span>Registrar com Apple</span>
+					<GoogleLogo className="h-5 w-5" weight="bold" />
+					<span>Continue with Google</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={() => handleSocialSignIn("github")}
-					className="flex h-[52px] w-full items-center justify-center gap-3 rounded-xl border border-zinc-700 bg-zinc-800 font-medium text-white transition-colors hover:bg-zinc-700"
+					className="flex h-11 w-full items-center justify-center gap-3 rounded-lg border border-border bg-card font-medium text-foreground text-sm transition-colors hover:bg-accent"
 				>
-					<Github className="h-5 w-5" />
-					<span>Registrar com GitHub</span>
+					<GithubLogo className="h-5 w-5" weight="bold" />
+					<span>Continue with GitHub</span>
 				</button>
 			</div>
 
 			{/* Terms */}
-			<p className="text-center text-xs text-zinc-500 leading-relaxed">
-				Ao criar uma conta, você concorda com
-				<br />
-				nossos{" "}
-				<span className="text-zinc-400">Termos de Serviço</span> e{" "}
-				<span className="text-zinc-400">Política de Privacidade</span>
+			<p className="max-w-xs text-center text-muted-foreground text-xs leading-relaxed">
+				By continuing, you agree to our{" "}
+				<span className="text-foreground underline-offset-4 hover:underline cursor-pointer">
+					Terms of Service
+				</span>{" "}
+				and{" "}
+				<span className="text-foreground underline-offset-4 hover:underline cursor-pointer">
+					Privacy Policy
+				</span>
 			</p>
 
 			{/* Footer */}
-			<div className="flex items-center gap-1.5">
-				<span className="text-sm text-zinc-400">Já tem uma conta?</span>
+			<p className="text-muted-foreground text-sm">
+				Already have an account?{" "}
 				<Link
 					href="/login"
-					className="font-semibold text-indigo-500 text-sm hover:text-indigo-400"
+					className="font-medium text-foreground underline-offset-4 hover:underline"
 				>
-					Entrar
+					Sign in
 				</Link>
-			</div>
+			</p>
 		</div>
 	);
 }
