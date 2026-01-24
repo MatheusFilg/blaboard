@@ -15,24 +15,15 @@ import {
 	DropdownMenuContent,
 	DropdownMenuGroup,
 	DropdownMenuItem,
-	DropdownMenuLabel,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import type { Column, CreateTaskInput, TaskLabel } from "@/lib/types";
 
 interface CreateTaskModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	onSubmit?: (data: TaskFormData) => void;
-}
-
-interface TaskFormData {
-	name: string;
-	description: string;
-	status: string;
-	priority: string;
-	assignee: string;
-	dueDate: string;
-	tags: string[];
+	columns: Column[];
+	onSubmit: (data: Omit<CreateTaskInput, "organizationId" | "createdById">) => Promise<void>;
 }
 
 interface TagProps {
@@ -41,34 +32,39 @@ interface TagProps {
 	onRemove?: () => void;
 }
 
-// Mock data
-const statuses = [
-	{ id: "backlog", label: "Backlog" },
-	{ id: "in-progress", label: "In Progress" },
-	{ id: "review", label: "Review" },
-	{ id: "done", label: "Done" },
-];
-
 const priorities = [
-	{ id: "high", label: "High", color: "#E85A4F" },
-	{ id: "medium", label: "Medium", color: "#FFB547" },
-	{ id: "low", label: "Low", color: "#32D583" },
-	{ id: "none", label: "None", color: "#4A4A50" },
-];
-
-const assignees = [
-	{ id: "js", name: "John Smith", initials: "JS", color: "#6366F1" },
-	{ id: "am", name: "Alice Miller", initials: "AM", color: "#E85A4F" },
-	{ id: "lk", name: "Lisa Kim", initials: "LK", color: "#32D583" },
-	{ id: "unassigned", name: "Unassigned", initials: "?", color: "#4A4A50" },
+	{ id: "HIGH" as const, label: "High", color: "#E85A4F" },
+	{ id: "MEDIUM" as const, label: "Medium", color: "#FFB547" },
+	{ id: "LOW" as const, label: "Low", color: "#32D583" },
+	{ id: "NONE" as const, label: "None", color: "#4A4A50" },
 ];
 
 const dueDates = [
-	{ id: "today", label: "Today", value: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) },
-	{ id: "tomorrow", label: "Tomorrow", value: new Date(Date.now() + 86400000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) },
-	{ id: "next-week", label: "Next Week", value: new Date(Date.now() + 7 * 86400000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) },
-	{ id: "next-month", label: "Next Month", value: new Date(Date.now() + 30 * 86400000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) },
-	{ id: "no-date", label: "No due date", value: "" },
+	{
+		id: "today",
+		label: "Today",
+		getValue: () => new Date().toISOString(),
+	},
+	{
+		id: "tomorrow",
+		label: "Tomorrow",
+		getValue: () => new Date(Date.now() + 86400000).toISOString(),
+	},
+	{
+		id: "next-week",
+		label: "Next Week",
+		getValue: () => new Date(Date.now() + 7 * 86400000).toISOString(),
+	},
+	{
+		id: "next-month",
+		label: "Next Month",
+		getValue: () => new Date(Date.now() + 30 * 86400000).toISOString(),
+	},
+	{
+		id: "no-date",
+		label: "No due date",
+		getValue: () => undefined,
+	},
 ];
 
 function Tag({ text, color, onRemove }: TagProps) {
@@ -92,41 +88,62 @@ function Tag({ text, color, onRemove }: TagProps) {
 export function CreateTaskModal({
 	isOpen,
 	onClose,
+	columns,
 	onSubmit,
 }: CreateTaskModalProps) {
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
-	const [status, setStatus] = useState(statuses[0]);
-	const [priority, setPriority] = useState(priorities[1]);
-	const [assignee, setAssignee] = useState(assignees[0]);
-	const [dueDate, setDueDate] = useState(dueDates[0]);
-	const [tags, setTags] = useState([
-		{ text: "Design", color: "#6366F1" },
-		{ text: "Feature", color: "#32D583" },
-	]);
+	const [selectedColumn, setSelectedColumn] = useState<Column | null>(
+		columns[0] ?? null,
+	);
+	const [priority, setPriority] = useState(priorities[3]);
+	const [dueDate, setDueDate] = useState(dueDates[4]);
+	const [tags, setTags] = useState<TaskLabel[]>([]);
+	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const handleSubmit = () => {
-		onSubmit?.({
-			name,
-			description,
-			status: status.id,
-			priority: priority.id,
-			assignee: assignee.id,
-			dueDate: dueDate.value,
-			tags: tags.map((t) => t.text),
-		});
-		onClose();
+	const resetForm = () => {
+		setName("");
+		setDescription("");
+		setSelectedColumn(columns[0] ?? null);
+		setPriority(priorities[3]);
+		setDueDate(dueDates[4]);
+		setTags([]);
+	};
+
+	const handleSubmit = async () => {
+		if (!name.trim() || !selectedColumn) return;
+
+		setIsSubmitting(true);
+		try {
+			await onSubmit({
+				title: name,
+				description: description || undefined,
+				priority: priority.id,
+				dueDate: dueDate.getValue(),
+				labels: tags.length > 0 ? tags : undefined,
+				columnId: selectedColumn.id,
+			});
+			resetForm();
+			onClose();
+		} finally {
+			setIsSubmitting(false);
+		}
 	};
 
 	const removeTag = (index: number) => {
 		setTags(tags.filter((_, i) => i !== index));
 	};
 
+	const handleClose = () => {
+		resetForm();
+		onClose();
+	};
+
 	return (
-		<Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+		<Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
 			<DialogContent
 				showCloseButton={false}
-				className="w-[600px] max-w-[600px] sm:max-w-[600px] gap-0 rounded-2xl border-none bg-[#1A1A1E] p-0 ring-0"
+				className="w-[600px] max-w-[600px] gap-0 rounded-2xl border-none bg-[#1A1A1E] p-0 ring-0 sm:max-w-[600px]"
 			>
 				{/* Header */}
 				<DialogHeader className="flex-row items-center justify-between border-b border-[#2A2A2E] p-6">
@@ -167,16 +184,26 @@ export function CreateTaskModal({
 						/>
 					</div>
 
-					{/* Status & Priority */}
+					{/* Column & Priority */}
 					<div className="flex gap-4">
-						{/* Status Dropdown */}
+						{/* Column Dropdown */}
 						<div className="flex flex-1 flex-col gap-2">
 							<label className="text-[13px] font-medium text-[#6B6B70]">
-								Status
+								Column
 							</label>
 							<DropdownMenu>
 								<DropdownMenuTrigger className="flex h-11 w-full items-center justify-between rounded-lg border border-[#2A2A2E] bg-[#16161A] px-3.5 outline-none transition-colors hover:border-[#3A3A3E] focus:border-[#6366F1]">
-									<span className="text-sm text-[#FAFAF9]">{status.label}</span>
+									<div className="flex items-center gap-2">
+										{selectedColumn?.color && (
+											<div
+												className="size-2 rounded-full"
+												style={{ backgroundColor: selectedColumn.color }}
+											/>
+										)}
+										<span className="text-sm text-[#FAFAF9]">
+											{selectedColumn?.name ?? "Select column"}
+										</span>
+									</div>
 									<ChevronDown className="size-[18px] text-[#6B6B70]" />
 								</DropdownMenuTrigger>
 								<DropdownMenuContent
@@ -185,14 +212,22 @@ export function CreateTaskModal({
 									sideOffset={4}
 								>
 									<DropdownMenuGroup>
-										{statuses.map((s) => (
+										{columns.map((col) => (
 											<DropdownMenuItem
-												key={s.id}
+												key={col.id}
 												className="flex cursor-pointer items-center justify-between rounded-md px-3 py-2 text-[#FAFAF9] hover:bg-[#16161A] focus:bg-[#16161A]"
-												onClick={() => setStatus(s)}
+												onClick={() => setSelectedColumn(col)}
 											>
-												<span className="text-sm">{s.label}</span>
-												{status.id === s.id && (
+												<div className="flex items-center gap-2">
+													{col.color && (
+														<div
+															className="size-2 rounded-full"
+															style={{ backgroundColor: col.color }}
+														/>
+													)}
+													<span className="text-sm">{col.name}</span>
+												</div>
+												{selectedColumn?.id === col.id && (
 													<Check className="size-4 text-[#6366F1]" />
 												)}
 											</DropdownMenuItem>
@@ -250,110 +285,40 @@ export function CreateTaskModal({
 						</div>
 					</div>
 
-					{/* Assignee & Due Date */}
-					<div className="flex gap-4">
-						{/* Assignee Dropdown */}
-						<div className="flex flex-1 flex-col gap-2">
-							<label className="text-[13px] font-medium text-[#6B6B70]">
-								Assignee
-							</label>
-							<DropdownMenu>
-								<DropdownMenuTrigger className="flex h-11 w-full items-center justify-between rounded-lg border border-[#2A2A2E] bg-[#16161A] px-3.5 outline-none transition-colors hover:border-[#3A3A3E] focus:border-[#6366F1]">
-									<div className="flex items-center gap-2.5">
-										<div
-											className="flex size-6 items-center justify-center rounded-full"
-											style={{ backgroundColor: assignee.color }}
+					{/* Due Date */}
+					<div className="flex flex-col gap-2">
+						<label className="text-[13px] font-medium text-[#6B6B70]">
+							Due Date
+						</label>
+						<DropdownMenu>
+							<DropdownMenuTrigger className="flex h-11 w-full items-center justify-between rounded-lg border border-[#2A2A2E] bg-[#16161A] px-3.5 outline-none transition-colors hover:border-[#3A3A3E] focus:border-[#6366F1]">
+								<div className="flex items-center gap-2.5">
+									<Calendar className="size-4 text-[#6B6B70]" />
+									<span className="text-sm text-[#FAFAF9]">{dueDate.label}</span>
+								</div>
+								<ChevronDown className="size-[18px] text-[#6B6B70]" />
+							</DropdownMenuTrigger>
+							<DropdownMenuContent
+								className="w-[--trigger-width] rounded-lg border border-[#2A2A2E] bg-[#1A1A1E] p-1"
+								align="start"
+								sideOffset={4}
+							>
+								<DropdownMenuGroup>
+									{dueDates.map((d) => (
+										<DropdownMenuItem
+											key={d.id}
+											className="flex cursor-pointer items-center justify-between rounded-md px-3 py-2 text-[#FAFAF9] hover:bg-[#16161A] focus:bg-[#16161A]"
+											onClick={() => setDueDate(d)}
 										>
-											<span className="text-[10px] font-semibold text-white">
-												{assignee.initials}
-											</span>
-										</div>
-										<span className="text-sm text-[#FAFAF9]">
-											{assignee.name}
-										</span>
-									</div>
-									<ChevronDown className="size-[18px] text-[#6B6B70]" />
-								</DropdownMenuTrigger>
-								<DropdownMenuContent
-									className="w-[--trigger-width] rounded-lg border border-[#2A2A2E] bg-[#1A1A1E] p-1"
-									align="start"
-									sideOffset={4}
-								>
-									<DropdownMenuGroup>
-										<DropdownMenuLabel className="px-3 py-1.5 text-xs font-semibold text-[#6B6B70]">
-											Team Members
-										</DropdownMenuLabel>
-										{assignees.map((a) => (
-											<DropdownMenuItem
-												key={a.id}
-												className="flex cursor-pointer items-center justify-between rounded-md px-3 py-2 text-[#FAFAF9] hover:bg-[#16161A] focus:bg-[#16161A]"
-												onClick={() => setAssignee(a)}
-											>
-												<div className="flex items-center gap-2.5">
-													<div
-														className="flex size-6 items-center justify-center rounded-full"
-														style={{ backgroundColor: a.color }}
-													>
-														<span className="text-[10px] font-semibold text-white">
-															{a.initials}
-														</span>
-													</div>
-													<span className="text-sm">{a.name}</span>
-												</div>
-												{assignee.id === a.id && (
-													<Check className="size-4 text-[#6366F1]" />
-												)}
-											</DropdownMenuItem>
-										))}
-									</DropdownMenuGroup>
-								</DropdownMenuContent>
-							</DropdownMenu>
-						</div>
-
-						{/* Due Date Dropdown */}
-						<div className="flex flex-1 flex-col gap-2">
-							<label className="text-[13px] font-medium text-[#6B6B70]">
-								Due Date
-							</label>
-							<DropdownMenu>
-								<DropdownMenuTrigger className="flex h-11 w-full items-center justify-between rounded-lg border border-[#2A2A2E] bg-[#16161A] px-3.5 outline-none transition-colors hover:border-[#3A3A3E] focus:border-[#6366F1]">
-									<div className="flex items-center gap-2.5">
-										<Calendar className="size-4 text-[#6B6B70]" />
-										<span className="text-sm text-[#FAFAF9]">
-											{dueDate.value || dueDate.label}
-										</span>
-									</div>
-									<ChevronDown className="size-[18px] text-[#6B6B70]" />
-								</DropdownMenuTrigger>
-								<DropdownMenuContent
-									className="w-[--trigger-width] rounded-lg border border-[#2A2A2E] bg-[#1A1A1E] p-1"
-									align="start"
-									sideOffset={4}
-								>
-									<DropdownMenuGroup>
-										{dueDates.map((d) => (
-											<DropdownMenuItem
-												key={d.id}
-												className="flex cursor-pointer items-center justify-between rounded-md px-3 py-2 text-[#FAFAF9] hover:bg-[#16161A] focus:bg-[#16161A]"
-												onClick={() => setDueDate(d)}
-											>
-												<div className="flex flex-col">
-													<span className="text-sm">{d.label}</span>
-													{d.value && (
-														<span className="text-xs text-[#6B6B70]">
-															{d.value}
-														</span>
-													)}
-												</div>
-												{dueDate.id === d.id && (
-													<Check className="size-4 text-[#6366F1]" />
-												)}
-											</DropdownMenuItem>
-										))}
-									</DropdownMenuGroup>
-								</DropdownMenuContent>
-							</DropdownMenu>
-						</div>
+											<span className="text-sm">{d.label}</span>
+											{dueDate.id === d.id && (
+												<Check className="size-4 text-[#6366F1]" />
+											)}
+										</DropdownMenuItem>
+									))}
+								</DropdownMenuGroup>
+							</DropdownMenuContent>
+						</DropdownMenu>
 					</div>
 
 					{/* Tags */}
@@ -364,7 +329,7 @@ export function CreateTaskModal({
 						<div className="flex flex-wrap items-center gap-2">
 							{tags.map((tag, index) => (
 								<Tag
-									key={tag.text}
+									key={`${tag.text}-${index}`}
 									text={tag.text}
 									color={tag.color}
 									onRemove={() => removeTag(index)}
@@ -391,10 +356,13 @@ export function CreateTaskModal({
 					<button
 						type="button"
 						onClick={handleSubmit}
-						className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#6366F1] px-6 transition-colors hover:bg-[#5558E3]"
+						disabled={!name.trim() || !selectedColumn || isSubmitting}
+						className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#6366F1] px-6 transition-colors hover:bg-[#5558E3] disabled:cursor-not-allowed disabled:opacity-50"
 					>
 						<Plus className="size-[18px] text-white" />
-						<span className="text-sm font-semibold text-white">Create Task</span>
+						<span className="text-sm font-semibold text-white">
+							{isSubmitting ? "Creating..." : "Create Task"}
+						</span>
 					</button>
 				</DialogFooter>
 			</DialogContent>

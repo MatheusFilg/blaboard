@@ -5,147 +5,72 @@ import { Sidebar } from "./sidebar";
 import { BoardHeader } from "./board-header";
 import { KanbanColumn } from "./kanban-column";
 import { CreateTaskModal } from "./create-task-modal";
-import type { TaskCardProps } from "./task-card";
+import { useBoard } from "@/hooks/use-board";
+import type { Column, Task, CreateTaskInput } from "@/lib/types";
 
-// Sample data based on the Pencil design
-const backlogTasks: TaskCardProps[] = [
-	{
-		title: "Design new dashboard",
-		description: "Create wireframes and mockups for the analytics dashboard",
-		priority: "medium",
-		label: { text: "Design", color: "#6366F1" },
-		assignee: { initials: "AM", color: "#E85A4F" },
-	},
-	{
-		title: "Update documentation",
-		description: "Review and update API documentation for v2.0",
-		priority: "low",
-		label: { text: "Docs", color: "#32D583" },
-		assignee: { initials: "JS", color: "#6366F1" },
-	},
-	{
-		title: "Research user feedback",
-		description: "Analyze user interviews and create summary report",
-		priority: "none",
-		label: { text: "Research", color: "#E85A4F" },
-		assignee: { initials: "LK", color: "#32D583", textColor: "#0B0B0E" },
-	},
-];
-
-const inProgressTasks: TaskCardProps[] = [
-	{
-		title: "Implement authentication",
-		description: "Add OAuth 2.0 login flow with Google and GitHub",
-		priority: "high",
-	},
-	{
-		title: "Implement authentication",
-		description: "Add OAuth 2.0 login flow with Google and GitHub",
-		priority: "high",
-		label: { text: "Backend", color: "#6366F1" },
-		assignee: { initials: "AM", color: "#E85A4F" },
-	},
-	{
-		title: "Build notification system",
-		description: "Real-time notifications with WebSocket integration",
-		priority: "medium",
-		label: { text: "Backend", color: "#6366F1" },
-		assignee: { initials: "JS", color: "#6366F1" },
-	},
-	{
-		title: "Create API endpoints",
-		description: "REST API for task CRUD operations",
-		priority: "low",
-		label: { text: "Backend", color: "#6366F1" },
-		assignee: { initials: "LK", color: "#32D583", textColor: "#0B0B0E" },
-	},
-	{
-		title: "Fix drag and drop bug",
-		description: "Cards not reordering correctly on mobile",
-		priority: "high",
-		label: { text: "Bug", color: "#E85A4F" },
-		assignee: { initials: "AM", color: "#E85A4F" },
-	},
-];
-
-const reviewTasks: TaskCardProps[] = [
-	{
-		title: "Review PR #142",
-		description: "Code review for new search feature implementation",
-		priority: "medium",
-		label: { text: "Review", color: "#FFB547" },
-		assignee: { initials: "JS", color: "#6366F1" },
-	},
-	{
-		title: "Test mobile responsiveness",
-		description: "QA testing on iOS and Android devices",
-		priority: "low",
-		label: { text: "QA", color: "#32D583" },
-		assignee: { initials: "LK", color: "#32D583", textColor: "#0B0B0E" },
-	},
-	{
-		title: "Security audit",
-		description: "Review authentication flow for vulnerabilities",
-		priority: "high",
-		label: { text: "Security", color: "#E85A4F" },
-		assignee: { initials: "AM", color: "#E85A4F" },
-	},
-];
-
-const doneTasks: TaskCardProps[] = [
-	{
-		title: "Setup CI/CD pipeline",
-		description: "Configure GitHub Actions for automated deployment",
-		completed: true,
-		label: { text: "DevOps", color: "#32D583" },
-		assignee: { initials: "JS", color: "#6366F1" },
-	},
-	{
-		title: "Database schema design",
-		description: "Design and implement PostgreSQL schema",
-		completed: true,
-		label: { text: "Backend", color: "#6366F1" },
-		assignee: { initials: "LK", color: "#32D583", textColor: "#0B0B0E" },
-	},
-];
-
-function filterTasks(tasks: TaskCardProps[], query: string): TaskCardProps[] {
-	if (!query.trim()) return tasks;
-	const lowerQuery = query.toLowerCase();
-	return tasks.filter(
-		(task) =>
-			task.title.toLowerCase().includes(lowerQuery) ||
-			task.description?.toLowerCase().includes(lowerQuery) ||
-			task.label?.text.toLowerCase().includes(lowerQuery),
-	);
+interface TaskBoardProps {
+	organizationId: string;
+	userId: string;
 }
 
-export function TaskBoard() {
+function filterColumns(columns: Column[], query: string): Column[] {
+	if (!query.trim()) return columns;
+	const lowerQuery = query.toLowerCase();
+
+	return columns.map((column) => ({
+		...column,
+		tasks: column.tasks.filter(
+			(task) =>
+				task.title.toLowerCase().includes(lowerQuery) ||
+				task.description?.toLowerCase().includes(lowerQuery) ||
+				task.labels?.some((label) =>
+					label.text.toLowerCase().includes(lowerQuery),
+				),
+		),
+	}));
+}
+
+export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
 
-	const filteredBacklog = useMemo(
-		() => filterTasks(backlogTasks, searchQuery),
-		[searchQuery],
-	);
-	const filteredInProgress = useMemo(
-		() => filterTasks(inProgressTasks, searchQuery),
-		[searchQuery],
-	);
-	const filteredReview = useMemo(
-		() => filterTasks(reviewTasks, searchQuery),
-		[searchQuery],
-	);
-	const filteredDone = useMemo(
-		() => filterTasks(doneTasks, searchQuery),
-		[searchQuery],
+	const { columns, isLoading, error, createTask } = useBoard({
+		organizationId,
+	});
+
+	const filteredColumns = useMemo(
+		() => filterColumns(columns, searchQuery),
+		[columns, searchQuery],
 	);
 
-	const totalTasks =
-		filteredBacklog.length +
-		filteredInProgress.length +
-		filteredReview.length +
-		filteredDone.length;
+	const totalTasks = useMemo(
+		() => filteredColumns.reduce((acc, col) => acc + col.tasks.length, 0),
+		[filteredColumns],
+	);
+
+	const handleCreateTask = async (input: Omit<CreateTaskInput, "organizationId" | "createdById">) => {
+		await createTask({
+			...input,
+			organizationId,
+			createdById: userId,
+		});
+	};
+
+	if (isLoading) {
+		return (
+			<div className="flex h-screen items-center justify-center bg-[#0B0B0E]">
+				<div className="text-[#6B6B70]">Loading board...</div>
+			</div>
+		);
+	}
+
+	if (error) {
+		return (
+			<div className="flex h-screen items-center justify-center bg-[#0B0B0E]">
+				<div className="text-[#E85A4F]">{error}</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="flex h-screen overflow-hidden bg-[#0B0B0E]">
@@ -155,7 +80,7 @@ export function TaskBoard() {
 			<main className="flex flex-1 flex-col gap-6 overflow-hidden p-6">
 				<BoardHeader
 					title="Project Overview"
-					subtitle={`${totalTasks} tasks · 4 team members`}
+					subtitle={`${totalTasks} tasks · ${columns.length} columns`}
 					searchQuery={searchQuery}
 					onSearchChange={setSearchQuery}
 					onNewTask={() => setIsModalOpen(true)}
@@ -163,26 +88,15 @@ export function TaskBoard() {
 
 				{/* Board Area */}
 				<div className="flex flex-1 gap-4 overflow-x-auto">
-					<KanbanColumn
-						title="Backlog"
-						count={filteredBacklog.length}
-						tasks={filteredBacklog}
-					/>
-					<KanbanColumn
-						title="In Progress"
-						count={filteredInProgress.length}
-						tasks={filteredInProgress}
-					/>
-					<KanbanColumn
-						title="Review"
-						count={filteredReview.length}
-						tasks={filteredReview}
-					/>
-					<KanbanColumn
-						title="Done"
-						count={filteredDone.length}
-						tasks={filteredDone}
-					/>
+					{filteredColumns.length === 0 ? (
+						<div className="flex flex-1 items-center justify-center text-[#6B6B70]">
+							No columns yet. Create your first column to get started.
+						</div>
+					) : (
+						filteredColumns.map((column) => (
+							<KanbanColumn key={column.id} column={column} />
+						))
+					)}
 				</div>
 			</main>
 
@@ -190,6 +104,8 @@ export function TaskBoard() {
 			<CreateTaskModal
 				isOpen={isModalOpen}
 				onClose={() => setIsModalOpen(false)}
+				columns={columns}
+				onSubmit={handleCreateTask}
 			/>
 		</div>
 	);
