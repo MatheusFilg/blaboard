@@ -66,3 +66,24 @@ export interface MoveTaskInput {
 	columnId: string;
 	order: number;
 }
+
+export interface CreateColumnInput {
+	name: string;
+	color?: string;
+	isCompleted?: boolean;
+	organizationId: string;
+}
+
+export interface UpdateColumnInput {
+	name?: string;
+	color?: string;
+	order?: number;
+	isCompleted?: boolean;
+}
+
+export const DEFAULT_COLUMNS = [
+	{ name: "Backlog", color: "#6B6B70", isCompleted: false },
+	{ name: "In Progress", color: "#6366F1", isCompleted: false },
+	{ name: "Review", color: "#FFB547", isCompleted: false },
+	{ name: "Done", color: "#32D583", isCompleted: true },
+] as const;

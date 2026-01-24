@@ -1,12 +1,22 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Sidebar } from "./sidebar";
 import { BoardHeader } from "./board-header";
 import { KanbanColumn } from "./kanban-column";
 import { CreateTaskModal } from "./create-task-modal";
-import { useBoard } from "@/hooks/use-board";
-import type { Column, Task, CreateTaskInput } from "@/lib/types";
+import { AddColumn } from "./add-column";
+import { EmptyBoard } from "./empty-board";
+import {
+	useColumns,
+	useCreateTask,
+	useCreateColumn,
+	useDeleteColumn,
+	useCreateDefaultColumns,
+} from "@/hooks/use-board";
+import { DEFAULT_COLUMNS } from "@/lib/types";
+import type { Column, CreateTaskInput } from "@/lib/types";
 
 interface TaskBoardProps {
 	organizationId: string;
@@ -34,9 +44,11 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
 
-	const { columns, isLoading, error, createTask } = useBoard({
-		organizationId,
-	});
+	const { data: columns = [], isLoading, error } = useColumns(organizationId);
+	const createTaskMutation = useCreateTask(organizationId);
+	const createColumnMutation = useCreateColumn(organizationId);
+	const deleteColumnMutation = useDeleteColumn(organizationId);
+	const createDefaultColumnsMutation = useCreateDefaultColumns(organizationId);
 
 	const filteredColumns = useMemo(
 		() => filterColumns(columns, searchQuery),
@@ -48,12 +60,55 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 		[filteredColumns],
 	);
 
-	const handleCreateTask = async (input: Omit<CreateTaskInput, "organizationId" | "createdById">) => {
-		await createTask({
-			...input,
-			organizationId,
-			createdById: userId,
-		});
+	const handleCreateTask = async (
+		input: Omit<CreateTaskInput, "organizationId" | "createdById">,
+	) => {
+		try {
+			await createTaskMutation.mutateAsync({
+				...input,
+				organizationId,
+				createdById: userId,
+			});
+			toast.success("Task created successfully");
+		} catch {
+			toast.error("Failed to create task");
+		}
+	};
+
+	const handleCreateColumn = async (name: string) => {
+		try {
+			await createColumnMutation.mutateAsync({
+				name,
+				organizationId,
+			});
+			toast.success("Column created successfully");
+		} catch {
+			toast.error("Failed to create column");
+		}
+	};
+
+	const handleDeleteColumn = async (id: string) => {
+		const column = columns.find((c) => c.id === id);
+		if (column && column.tasks.length > 0) {
+			toast.error("Cannot delete column with tasks. Move or delete tasks first.");
+			return;
+		}
+
+		try {
+			await deleteColumnMutation.mutateAsync(id);
+			toast.success("Column deleted successfully");
+		} catch {
+			toast.error("Failed to delete column");
+		}
+	};
+
+	const handleCreateDefaultColumns = async () => {
+		try {
+			await createDefaultColumnsMutation.mutateAsync([...DEFAULT_COLUMNS]);
+			toast.success("Default columns created successfully");
+		} catch {
+			toast.error("Failed to create default columns");
+		}
 	};
 
 	if (isLoading) {
@@ -67,7 +122,7 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 	if (error) {
 		return (
 			<div className="flex h-screen items-center justify-center bg-[#0B0B0E]">
-				<div className="text-[#E85A4F]">{error}</div>
+				<div className="text-[#E85A4F]">{error.message}</div>
 			</div>
 		);
 	}
@@ -87,17 +142,26 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 				/>
 
 				{/* Board Area */}
-				<div className="flex flex-1 gap-4 overflow-x-auto">
-					{filteredColumns.length === 0 ? (
-						<div className="flex flex-1 items-center justify-center text-[#6B6B70]">
-							No columns yet. Create your first column to get started.
-						</div>
-					) : (
-						filteredColumns.map((column) => (
-							<KanbanColumn key={column.id} column={column} />
-						))
-					)}
-				</div>
+				{columns.length === 0 ? (
+					<EmptyBoard
+						onCreateDefaultColumns={handleCreateDefaultColumns}
+						isLoading={createDefaultColumnsMutation.isPending}
+					/>
+				) : (
+					<div className="flex flex-1 gap-4 overflow-x-auto pb-4">
+						{filteredColumns.map((column) => (
+							<KanbanColumn
+								key={column.id}
+								column={column}
+								onDelete={handleDeleteColumn}
+							/>
+						))}
+						<AddColumn
+							onAdd={handleCreateColumn}
+							isLoading={createColumnMutation.isPending}
+						/>
+					</div>
+				)}
 			</main>
 
 			{/* Create Task Modal */}

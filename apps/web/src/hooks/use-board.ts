@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type {
 	Column,
@@ -8,145 +8,211 @@ import type {
 	CreateTaskInput,
 	UpdateTaskInput,
 	MoveTaskInput,
+	CreateColumnInput,
+	UpdateColumnInput,
 } from "@/lib/types";
 
-interface UseBoardOptions {
-	organizationId: string;
-}
+const COLUMNS_KEY = "columns";
 
-interface UseBoardReturn {
-	columns: Column[];
-	isLoading: boolean;
-	error: string | null;
-	refetch: () => Promise<void>;
-	createTask: (input: CreateTaskInput) => Promise<Task | null>;
-	updateTask: (id: string, input: UpdateTaskInput) => Promise<Task | null>;
-	deleteTask: (id: string) => Promise<boolean>;
-	moveTask: (input: MoveTaskInput) => Promise<Task | null>;
-}
-
-export function useBoard({ organizationId }: UseBoardOptions): UseBoardReturn {
-	const [columns, setColumns] = useState<Column[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
-
-	const fetchColumns = useCallback(async () => {
-		if (!organizationId) return;
-
-		setIsLoading(true);
-		setError(null);
-
-		try {
-			const { data, error: apiError } = await api.columns.get({
+export function useColumns(organizationId: string) {
+	return useQuery({
+		queryKey: [COLUMNS_KEY, organizationId],
+		queryFn: async () => {
+			const { data, error } = await api.columns.get({
 				query: { organizationId },
 			});
 
-			if (apiError) {
-				setError("Failed to fetch columns");
-				return;
+			if (error) {
+				throw new Error("Failed to fetch columns");
 			}
 
-			setColumns((data as Column[]) ?? []);
-		} catch (err) {
-			setError("Failed to fetch columns");
-			console.error(err);
-		} finally {
-			setIsLoading(false);
-		}
-	}, [organizationId]);
-
-	useEffect(() => {
-		fetchColumns();
-	}, [fetchColumns]);
-
-	const createTask = useCallback(
-		async (input: CreateTaskInput): Promise<Task | null> => {
-			try {
-				const { data, error: apiError } = await api.tasks.post(input);
-
-				if (apiError) {
-					console.error("Failed to create task:", apiError);
-					return null;
-				}
-
-				await fetchColumns();
-				return data as Task;
-			} catch (err) {
-				console.error("Failed to create task:", err);
-				return null;
-			}
+			return (data ?? []) as Column[];
 		},
-		[fetchColumns],
-	);
+		enabled: !!organizationId,
+	});
+}
 
-	const updateTask = useCallback(
-		async (id: string, input: UpdateTaskInput): Promise<Task | null> => {
-			try {
-				const { data, error: apiError } = await api.tasks({ id }).patch(input);
+export function useCreateTask(organizationId: string) {
+	const queryClient = useQueryClient();
 
-				if (apiError) {
-					console.error("Failed to update task:", apiError);
-					return null;
-				}
+	return useMutation({
+		mutationFn: async (input: CreateTaskInput) => {
+			const { data, error } = await api.tasks.post(input);
 
-				await fetchColumns();
-				return data as Task;
-			} catch (err) {
-				console.error("Failed to update task:", err);
-				return null;
+			if (error) {
+				throw new Error("Failed to create task");
 			}
+
+			return data as Task;
 		},
-		[fetchColumns],
-	);
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: [COLUMNS_KEY, organizationId] });
+		},
+	});
+}
 
-	const deleteTask = useCallback(
-		async (id: string): Promise<boolean> => {
-			try {
-				const { error: apiError } = await api.tasks({ id }).delete();
+export function useUpdateTask(organizationId: string) {
+	const queryClient = useQueryClient();
 
-				if (apiError) {
-					console.error("Failed to delete task:", apiError);
-					return false;
-				}
+	return useMutation({
+		mutationFn: async ({ id, input }: { id: string; input: UpdateTaskInput }) => {
+			const { data, error } = await api.tasks({ id }).patch(input);
 
-				await fetchColumns();
-				return true;
-			} catch (err) {
-				console.error("Failed to delete task:", err);
-				return false;
+			if (error) {
+				throw new Error("Failed to update task");
 			}
+
+			return data as Task;
 		},
-		[fetchColumns],
-	);
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: [COLUMNS_KEY, organizationId] });
+		},
+	});
+}
 
-	const moveTask = useCallback(
-		async (input: MoveTaskInput): Promise<Task | null> => {
-			try {
-				const { data, error: apiError } = await api.tasks.move.post(input);
+export function useDeleteTask(organizationId: string) {
+	const queryClient = useQueryClient();
 
-				if (apiError) {
-					console.error("Failed to move task:", apiError);
-					return null;
-				}
+	return useMutation({
+		mutationFn: async (id: string) => {
+			const { error } = await api.tasks({ id }).delete();
 
-				await fetchColumns();
-				return data as Task;
-			} catch (err) {
-				console.error("Failed to move task:", err);
-				return null;
+			if (error) {
+				throw new Error("Failed to delete task");
 			}
-		},
-		[fetchColumns],
-	);
 
-	return {
-		columns,
-		isLoading,
-		error,
-		refetch: fetchColumns,
-		createTask,
-		updateTask,
-		deleteTask,
-		moveTask,
-	};
+			return { success: true };
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: [COLUMNS_KEY, organizationId] });
+		},
+	});
+}
+
+export function useMoveTask(organizationId: string) {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: async (input: MoveTaskInput) => {
+			const { data, error } = await api.tasks.move.post(input);
+
+			if (error) {
+				throw new Error("Failed to move task");
+			}
+
+			return data as Task;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: [COLUMNS_KEY, organizationId] });
+		},
+	});
+}
+
+export function useReorderTasks(organizationId: string) {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: async (
+			tasks: { id: string; order: number; columnId: string }[],
+		) => {
+			const { error } = await api.tasks.reorder.post({ tasks });
+
+			if (error) {
+				throw new Error("Failed to reorder tasks");
+			}
+
+			return { success: true };
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: [COLUMNS_KEY, organizationId] });
+		},
+	});
+}
+
+// Column mutations
+
+export function useCreateColumn(organizationId: string) {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: async (input: CreateColumnInput) => {
+			const { data, error } = await api.columns.post(input);
+
+			if (error) {
+				throw new Error("Failed to create column");
+			}
+
+			return data as Column;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: [COLUMNS_KEY, organizationId] });
+		},
+	});
+}
+
+export function useUpdateColumn(organizationId: string) {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: async ({ id, input }: { id: string; input: UpdateColumnInput }) => {
+			const { data, error } = await api.columns({ id }).patch(input);
+
+			if (error) {
+				throw new Error("Failed to update column");
+			}
+
+			return data as Column;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: [COLUMNS_KEY, organizationId] });
+		},
+	});
+}
+
+export function useDeleteColumn(organizationId: string) {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: async (id: string) => {
+			const { error } = await api.columns({ id }).delete();
+
+			if (error) {
+				throw new Error("Failed to delete column");
+			}
+
+			return { success: true };
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: [COLUMNS_KEY, organizationId] });
+		},
+	});
+}
+
+export function useCreateDefaultColumns(organizationId: string) {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: async (
+			columns: { name: string; color?: string; isCompleted?: boolean }[],
+		) => {
+			const results = await Promise.all(
+				columns.map((col) =>
+					api.columns.post({
+						...col,
+						organizationId,
+					}),
+				),
+			);
+
+			const errors = results.filter((r) => r.error);
+			if (errors.length > 0) {
+				throw new Error("Failed to create some columns");
+			}
+
+			return results.map((r) => r.data as Column);
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: [COLUMNS_KEY, organizationId] });
+		},
+	});
 }
