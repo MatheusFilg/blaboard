@@ -11,6 +11,7 @@
 		"@base-ui/react": "^1.0.0",
 		"@blaboard/auth": "workspace:*",
 		"@blaboard/env": "workspace:*",
+		"@phosphor-icons/react": "^2.1.10",
 		"@prisma/client": "catalog:",
 		"@tanstack/react-form": "^1.27.3",
 		"babel-plugin-react-compiler": "^1.0.0",

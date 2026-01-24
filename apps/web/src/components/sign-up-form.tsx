@@ -1,6 +1,6 @@
 "use client";
 
-import { Apple, Github } from "lucide-react";
+import { Github } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -49,15 +49,6 @@ export default function SignUpForm() {
 				>
 					<span className="font-bold text-[#4285F4] text-xl">G</span>
 					<span>Registrar com Google</span>
-				</button>
-
-				<button
-					type="button"
-					disabled
-					className="flex h-[52px] w-full cursor-not-allowed items-center justify-center gap-3 rounded-xl border border-zinc-700 bg-zinc-800 font-medium text-white opacity-50"
-				>
-					<Apple className="h-5 w-5" />
-					<span>Registrar com Apple</span>
 				</button>
 
 				<button
