@@ -1,6 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import {
+	DndContext,
+	DragOverlay,
+	PointerSensor,
+	useSensor,
+	useSensors,
+	closestCorners,
+	type DragStartEvent,
+	type DragEndEvent,
+	type DragOverEvent,
+} from "@dnd-kit/core";
+import { arrayMove } from "@dnd-kit/sortable";
 import { toast } from "sonner";
 import { Sidebar } from "./sidebar";
 import { BoardHeader } from "./board-header";
@@ -8,15 +20,18 @@ import { KanbanColumn } from "./kanban-column";
 import { CreateTaskModal } from "./create-task-modal";
 import { AddColumn } from "./add-column";
 import { EmptyBoard } from "./empty-board";
+import { DraggableTaskCard } from "./draggable-task-card";
 import {
 	useColumns,
 	useCreateTask,
 	useCreateColumn,
 	useDeleteColumn,
 	useCreateDefaultColumns,
+	useMoveTask,
+	useReorderTasks,
 } from "@/hooks/use-board";
 import { DEFAULT_COLUMNS } from "@/lib/types";
-import type { Column, CreateTaskInput } from "@/lib/types";
+import type { Column, Task, CreateTaskInput } from "@/lib/types";
 
 interface TaskBoardProps {
 	organizationId: string;
@@ -43,12 +58,23 @@ function filterColumns(columns: Column[], query: string): Column[] {
 export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
+	const [activeTask, setActiveTask] = useState<Task | null>(null);
 
 	const { data: columns = [], isLoading, error } = useColumns(organizationId);
 	const createTaskMutation = useCreateTask(organizationId);
 	const createColumnMutation = useCreateColumn(organizationId);
 	const deleteColumnMutation = useDeleteColumn(organizationId);
 	const createDefaultColumnsMutation = useCreateDefaultColumns(organizationId);
+	const moveTaskMutation = useMoveTask(organizationId);
+	const reorderTasksMutation = useReorderTasks(organizationId);
+
+	const sensors = useSensors(
+		useSensor(PointerSensor, {
+			activationConstraint: {
+				distance: 8,
+			},
+		}),
+	);
 
 	const filteredColumns = useMemo(
 		() => filterColumns(columns, searchQuery),
@@ -58,6 +84,102 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 	const totalTasks = useMemo(
 		() => filteredColumns.reduce((acc, col) => acc + col.tasks.length, 0),
 		[filteredColumns],
+	);
+
+	const findColumnByTaskId = useCallback(
+		(taskId: string): Column | undefined => {
+			return columns.find((col) => col.tasks.some((task) => task.id === taskId));
+		},
+		[columns],
+	);
+
+	const handleDragStart = useCallback(
+		(event: DragStartEvent) => {
+			const { active } = event;
+			const taskId = active.id as string;
+
+			const column = findColumnByTaskId(taskId);
+			if (column) {
+				const task = column.tasks.find((t) => t.id === taskId);
+				if (task) {
+					setActiveTask(task);
+				}
+			}
+		},
+		[findColumnByTaskId],
+	);
+
+	const handleDragOver = useCallback((event: DragOverEvent) => {
+		// Visual feedback is handled by the column's isOver state
+	}, []);
+
+	const handleDragEnd = useCallback(
+		async (event: DragEndEvent) => {
+			const { active, over } = event;
+			setActiveTask(null);
+
+			if (!over) return;
+
+			const activeId = active.id as string;
+			const overId = over.id as string;
+
+			const activeColumn = findColumnByTaskId(activeId);
+			if (!activeColumn) return;
+
+			// Check if dropped on a column
+			const overColumn = columns.find((col) => col.id === overId);
+			// Or dropped on a task
+			const overTaskColumn = findColumnByTaskId(overId);
+
+			const targetColumn = overColumn || overTaskColumn;
+			if (!targetColumn) return;
+
+			// Same column - reorder
+			if (activeColumn.id === targetColumn.id) {
+				const activeIndex = activeColumn.tasks.findIndex(
+					(t) => t.id === activeId,
+				);
+				const overIndex = overColumn
+					? activeColumn.tasks.length // Drop at end if on column
+					: activeColumn.tasks.findIndex((t) => t.id === overId);
+
+				if (activeIndex !== overIndex && overIndex !== -1) {
+					const newTasks = arrayMove(
+						activeColumn.tasks,
+						activeIndex,
+						overIndex,
+					);
+					const reorderedTasks = newTasks.map((task, index) => ({
+						id: task.id,
+						order: index,
+						columnId: activeColumn.id,
+					}));
+
+					try {
+						await reorderTasksMutation.mutateAsync(reorderedTasks);
+					} catch {
+						toast.error("Failed to reorder tasks");
+					}
+				}
+			} else {
+				// Different column - move task
+				const overIndex = overColumn
+					? targetColumn.tasks.length // Drop at end if on column
+					: targetColumn.tasks.findIndex((t) => t.id === overId);
+
+				try {
+					await moveTaskMutation.mutateAsync({
+						taskId: activeId,
+						columnId: targetColumn.id,
+						order: overIndex === -1 ? targetColumn.tasks.length : overIndex,
+					});
+					toast.success("Task moved successfully");
+				} catch {
+					toast.error("Failed to move task");
+				}
+			}
+		},
+		[columns, findColumnByTaskId, moveTaskMutation, reorderTasksMutation],
 	);
 
 	const handleCreateTask = async (
@@ -90,7 +212,9 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 	const handleDeleteColumn = async (id: string) => {
 		const column = columns.find((c) => c.id === id);
 		if (column && column.tasks.length > 0) {
-			toast.error("Cannot delete column with tasks. Move or delete tasks first.");
+			toast.error(
+				"Cannot delete column with tasks. Move or delete tasks first.",
+			);
 			return;
 		}
 
@@ -148,19 +272,38 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 						isLoading={createDefaultColumnsMutation.isPending}
 					/>
 				) : (
-					<div className="flex flex-1 gap-4 overflow-x-auto pb-4">
-						{filteredColumns.map((column) => (
-							<KanbanColumn
-								key={column.id}
-								column={column}
-								onDelete={handleDeleteColumn}
+					<DndContext
+						sensors={sensors}
+						collisionDetection={closestCorners}
+						onDragStart={handleDragStart}
+						onDragOver={handleDragOver}
+						onDragEnd={handleDragEnd}
+					>
+						<div className="flex flex-1 gap-4 overflow-x-auto pb-4">
+							{filteredColumns.map((column) => (
+								<KanbanColumn
+									key={column.id}
+									column={column}
+									onDelete={handleDeleteColumn}
+								/>
+							))}
+							<AddColumn
+								onAdd={handleCreateColumn}
+								isLoading={createColumnMutation.isPending}
 							/>
-						))}
-						<AddColumn
-							onAdd={handleCreateColumn}
-							isLoading={createColumnMutation.isPending}
-						/>
-					</div>
+						</div>
+
+						<DragOverlay>
+							{activeTask && (
+								<DraggableTaskCard
+									task={activeTask}
+									isCompleted={
+										findColumnByTaskId(activeTask.id)?.isCompleted ?? false
+									}
+								/>
+							)}
+						</DragOverlay>
+					</DndContext>
 				)}
 			</main>
 

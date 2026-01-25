@@ -1,5 +1,6 @@
 export { Sidebar } from "./sidebar";
 export { TaskCard } from "./task-card";
+export { DraggableTaskCard } from "./draggable-task-card";
 export { KanbanColumn } from "./kanban-column";
 export { BoardHeader } from "./board-header";
 export { TaskBoard } from "./task-board";

@@ -1,13 +1,20 @@
 "use client";
 
+import { useMemo } from "react";
+import { useDroppable } from "@dnd-kit/core";
+import {
+	SortableContext,
+	verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { MoreHorizontal, Trash2 } from "lucide-react";
-import { TaskCard } from "./task-card";
+import { DraggableTaskCard } from "./draggable-task-card";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 import type { Column } from "@/lib/types";
 
 interface KanbanColumnProps {
@@ -16,6 +23,19 @@ interface KanbanColumnProps {
 }
 
 export function KanbanColumn({ column, onDelete }: KanbanColumnProps) {
+	const { setNodeRef, isOver } = useDroppable({
+		id: column.id,
+		data: {
+			type: "column",
+			column,
+		},
+	});
+
+	const taskIds = useMemo(
+		() => column.tasks.map((task) => task.id),
+		[column.tasks],
+	);
+
 	return (
 		<div className="flex w-72 min-w-72 flex-col gap-3">
 			{/* Column Header */}
@@ -60,14 +80,22 @@ export function KanbanColumn({ column, onDelete }: KanbanColumnProps) {
 			</div>
 
 			{/* Cards */}
-			<div className="flex flex-1 flex-col gap-3 overflow-y-auto">
-				{column.tasks.map((task) => (
-					<TaskCard
-						key={task.id}
-						task={task}
-						isCompleted={column.isCompleted}
-					/>
-				))}
+			<div
+				ref={setNodeRef}
+				className={cn(
+					"flex flex-1 flex-col gap-3 overflow-y-auto rounded-lg p-1 transition-colors",
+					isOver && "bg-[#6366F1]/10",
+				)}
+			>
+				<SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
+					{column.tasks.map((task) => (
+						<DraggableTaskCard
+							key={task.id}
+							task={task}
+							isCompleted={column.isCompleted}
+						/>
+					))}
+				</SortableContext>
 			</div>
 		</div>
 	);
