@@ -2,10 +2,7 @@
 
 import { useMemo } from "react";
 import { useDroppable } from "@dnd-kit/core";
-import {
-	SortableContext,
-	verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { MoreHorizontal, Trash2 } from "lucide-react";
 import { DraggableTaskCard } from "./draggable-task-card";
 import {
@@ -83,7 +80,7 @@ export function KanbanColumn({ column, onDelete }: KanbanColumnProps) {
 			<div
 				ref={setNodeRef}
 				className={cn(
-					"flex flex-1 flex-col gap-3 overflow-y-auto rounded-lg p-1 transition-colors",
+					"flex min-h-[100px] flex-1 flex-col gap-2 overflow-y-auto rounded-lg p-1",
 					isOver && "bg-[#6366F1]/10",
 				)}
 			>

@@ -1,13 +1,15 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	DndContext,
 	DragOverlay,
 	PointerSensor,
+	TouchSensor,
 	useSensor,
 	useSensors,
-	closestCorners,
+	pointerWithin,
+	MeasuringStrategy,
 	type DragStartEvent,
 	type DragEndEvent,
 	type DragOverEvent,
@@ -59,6 +61,16 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [activeTask, setActiveTask] = useState<Task | null>(null);
+	const [localColumns, setLocalColumns] = useState<Column[]>([]);
+
+	// Track original position for server sync
+	const dragStartState = useRef<{
+		columnId: string;
+		taskIndex: number;
+	} | null>(null);
+
+	// Track if we're waiting for a mutation to complete
+	const isPendingMutation = useRef(false);
 
 	const { data: columns = [], isLoading, error } = useColumns(organizationId);
 	const createTaskMutation = useCreateTask(organizationId);
@@ -68,17 +80,36 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 	const moveTaskMutation = useMoveTask(organizationId);
 	const reorderTasksMutation = useReorderTasks(organizationId);
 
+	// Sync local state with server data when not dragging and not pending mutation
+	useEffect(() => {
+		if (!activeTask && !isPendingMutation.current) {
+			setLocalColumns(columns);
+		}
+	}, [columns, activeTask]);
+
 	const sensors = useSensors(
 		useSensor(PointerSensor, {
 			activationConstraint: {
-				distance: 8,
+				distance: 3,
+			},
+		}),
+		useSensor(TouchSensor, {
+			activationConstraint: {
+				delay: 150,
+				tolerance: 5,
 			},
 		}),
 	);
 
+	const measuring = {
+		droppable: {
+			strategy: MeasuringStrategy.Always,
+		},
+	};
+
 	const filteredColumns = useMemo(
-		() => filterColumns(columns, searchQuery),
-		[columns, searchQuery],
+		() => filterColumns(localColumns, searchQuery),
+		[localColumns, searchQuery],
 	);
 
 	const totalTasks = useMemo(
@@ -88,9 +119,11 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 
 	const findColumnByTaskId = useCallback(
 		(taskId: string): Column | undefined => {
-			return columns.find((col) => col.tasks.some((task) => task.id === taskId));
+			return localColumns.find((col) =>
+				col.tasks.some((task) => task.id === taskId),
+			);
 		},
-		[columns],
+		[localColumns],
 	);
 
 	const handleDragStart = useCallback(
@@ -100,87 +133,201 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 
 			const column = findColumnByTaskId(taskId);
 			if (column) {
-				const task = column.tasks.find((t) => t.id === taskId);
+				const taskIndex = column.tasks.findIndex((t) => t.id === taskId);
+				const task = column.tasks[taskIndex];
 				if (task) {
 					setActiveTask(task);
+					dragStartState.current = {
+						columnId: column.id,
+						taskIndex,
+					};
 				}
 			}
 		},
 		[findColumnByTaskId],
 	);
 
-	const handleDragOver = useCallback((event: DragOverEvent) => {
-		// Visual feedback is handled by the column's isOver state
-	}, []);
-
-	const handleDragEnd = useCallback(
-		async (event: DragEndEvent) => {
+	const handleDragOver = useCallback(
+		(event: DragOverEvent) => {
 			const { active, over } = event;
-			setActiveTask(null);
-
-			if (!over) return;
+			if (!over || !activeTask) return;
 
 			const activeId = active.id as string;
 			const overId = over.id as string;
 
-			const activeColumn = findColumnByTaskId(activeId);
-			if (!activeColumn) return;
+			if (activeId === overId) return;
 
-			// Check if dropped on a column
-			const overColumn = columns.find((col) => col.id === overId);
-			// Or dropped on a task
-			const overTaskColumn = findColumnByTaskId(overId);
+			setLocalColumns((currentColumns) => {
+				// Find current position of the active task
+				const sourceColIndex = currentColumns.findIndex((col) =>
+					col.tasks.some((t) => t.id === activeId),
+				);
+				if (sourceColIndex === -1) return currentColumns;
 
-			const targetColumn = overColumn || overTaskColumn;
-			if (!targetColumn) return;
-
-			// Same column - reorder
-			if (activeColumn.id === targetColumn.id) {
-				const activeIndex = activeColumn.tasks.findIndex(
+				const sourceCol = currentColumns[sourceColIndex];
+				const activeTaskIndex = sourceCol.tasks.findIndex(
 					(t) => t.id === activeId,
 				);
-				const overIndex = overColumn
-					? activeColumn.tasks.length // Drop at end if on column
-					: activeColumn.tasks.findIndex((t) => t.id === overId);
+				if (activeTaskIndex === -1) return currentColumns;
 
-				if (activeIndex !== overIndex && overIndex !== -1) {
-					const newTasks = arrayMove(
-						activeColumn.tasks,
-						activeIndex,
-						overIndex,
-					);
-					const reorderedTasks = newTasks.map((task, index) => ({
-						id: task.id,
-						order: index,
-						columnId: activeColumn.id,
-					}));
+				const task = sourceCol.tasks[activeTaskIndex];
 
-					try {
-						await reorderTasksMutation.mutateAsync(reorderedTasks);
-					} catch {
-						toast.error("Failed to reorder tasks");
+				// Check if over a column or a task
+				const overColumnIndex = currentColumns.findIndex(
+					(col) => col.id === overId,
+				);
+				const overTaskColumnIndex = currentColumns.findIndex((col) =>
+					col.tasks.some((t) => t.id === overId),
+				);
+
+				// Determine target column
+				let targetColIndex: number;
+				let insertIndex: number;
+
+				if (overColumnIndex !== -1) {
+					// Dropped on a column - add to end
+					targetColIndex = overColumnIndex;
+					insertIndex = currentColumns[targetColIndex].tasks.length;
+					// If same column, subtract 1 because we'll remove the task first
+					if (sourceColIndex === targetColIndex) {
+						insertIndex = currentColumns[targetColIndex].tasks.length - 1;
 					}
+				} else if (overTaskColumnIndex !== -1) {
+					// Dropped on a task
+					targetColIndex = overTaskColumnIndex;
+					const overTaskIndex = currentColumns[targetColIndex].tasks.findIndex(
+						(t) => t.id === overId,
+					);
+					insertIndex = overTaskIndex;
+				} else {
+					return currentColumns;
 				}
-			} else {
-				// Different column - move task
-				const overIndex = overColumn
-					? targetColumn.tasks.length // Drop at end if on column
-					: targetColumn.tasks.findIndex((t) => t.id === overId);
 
+				// Same column reordering
+				if (sourceColIndex === targetColIndex) {
+					if (activeTaskIndex === insertIndex) return currentColumns;
+
+					const newColumns = [...currentColumns];
+					const newTasks = arrayMove(
+						newColumns[sourceColIndex].tasks,
+						activeTaskIndex,
+						insertIndex,
+					);
+					newColumns[sourceColIndex] = {
+						...newColumns[sourceColIndex],
+						tasks: newTasks,
+					};
+					return newColumns;
+				}
+
+				// Cross-column move
+				const newColumns = [...currentColumns];
+
+				// Remove from source
+				newColumns[sourceColIndex] = {
+					...newColumns[sourceColIndex],
+					tasks: newColumns[sourceColIndex].tasks.filter(
+						(t) => t.id !== activeId,
+					),
+				};
+
+				// Add to target
+				const targetTasks = [...newColumns[targetColIndex].tasks];
+				targetTasks.splice(insertIndex, 0, task);
+				newColumns[targetColIndex] = {
+					...newColumns[targetColIndex],
+					tasks: targetTasks,
+				};
+
+				return newColumns;
+			});
+		},
+		[activeTask],
+	);
+
+	const handleDragEnd = useCallback(
+		async (event: DragEndEvent) => {
+			const { active, over } = event;
+			const startState = dragStartState.current;
+
+			// Mark as pending BEFORE clearing activeTask to prevent sync with stale server state
+			isPendingMutation.current = true;
+
+			setActiveTask(null);
+			dragStartState.current = null;
+
+			if (!over || !startState) {
+				isPendingMutation.current = false;
+				setLocalColumns(columns);
+				return;
+			}
+
+			const activeId = active.id as string;
+
+			// Find current position in local state
+			const currentColumn = localColumns.find((col) =>
+				col.tasks.some((t) => t.id === activeId),
+			);
+
+			if (!currentColumn) {
+				isPendingMutation.current = false;
+				setLocalColumns(columns);
+				return;
+			}
+
+			const currentIndex = currentColumn.tasks.findIndex(
+				(t) => t.id === activeId,
+			);
+
+			// Check if position changed
+			const columnChanged = currentColumn.id !== startState.columnId;
+			const indexChanged = currentIndex !== startState.taskIndex;
+
+			if (!columnChanged && !indexChanged) {
+				isPendingMutation.current = false;
+				return; // No change
+			}
+
+			if (columnChanged) {
+				// Move to different column
 				try {
 					await moveTaskMutation.mutateAsync({
 						taskId: activeId,
-						columnId: targetColumn.id,
-						order: overIndex === -1 ? targetColumn.tasks.length : overIndex,
+						columnId: currentColumn.id,
+						order: currentIndex,
 					});
-					toast.success("Task moved successfully");
 				} catch {
 					toast.error("Failed to move task");
+					setLocalColumns(columns);
+				}
+			} else if (indexChanged) {
+				// Reorder in same column
+				const reorderedTasks = currentColumn.tasks.map((task, index) => ({
+					id: task.id,
+					order: index,
+					columnId: currentColumn.id,
+				}));
+
+				try {
+					await reorderTasksMutation.mutateAsync(reorderedTasks);
+				} catch {
+					toast.error("Failed to reorder tasks");
+					setLocalColumns(columns);
 				}
 			}
+
+			// Allow sync again after mutation completes
+			isPendingMutation.current = false;
 		},
-		[columns, findColumnByTaskId, moveTaskMutation, reorderTasksMutation],
+		[columns, localColumns, moveTaskMutation, reorderTasksMutation],
 	);
+
+	const handleDragCancel = useCallback(() => {
+		setActiveTask(null);
+		dragStartState.current = null;
+		isPendingMutation.current = false;
+		setLocalColumns(columns);
+	}, [columns]);
 
 	const handleCreateTask = async (
 		input: Omit<CreateTaskInput, "organizationId" | "createdById">,
@@ -210,7 +357,7 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 	};
 
 	const handleDeleteColumn = async (id: string) => {
-		const column = columns.find((c) => c.id === id);
+		const column = localColumns.find((c) => c.id === id);
 		if (column && column.tasks.length > 0) {
 			toast.error(
 				"Cannot delete column with tasks. Move or delete tasks first.",
@@ -266,7 +413,7 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 				/>
 
 				{/* Board Area */}
-				{columns.length === 0 ? (
+				{localColumns.length === 0 ? (
 					<EmptyBoard
 						onCreateDefaultColumns={handleCreateDefaultColumns}
 						isLoading={createDefaultColumnsMutation.isPending}
@@ -274,10 +421,12 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 				) : (
 					<DndContext
 						sensors={sensors}
-						collisionDetection={closestCorners}
+						collisionDetection={pointerWithin}
+						measuring={measuring}
 						onDragStart={handleDragStart}
 						onDragOver={handleDragOver}
 						onDragEnd={handleDragEnd}
+						onDragCancel={handleDragCancel}
 					>
 						<div className="flex flex-1 gap-4 overflow-x-auto pb-4">
 							{filteredColumns.map((column) => (
@@ -293,14 +442,16 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 							/>
 						</div>
 
-						<DragOverlay>
+						<DragOverlay dropAnimation={null}>
 							{activeTask && (
-								<DraggableTaskCard
-									task={activeTask}
-									isCompleted={
-										findColumnByTaskId(activeTask.id)?.isCompleted ?? false
-									}
-								/>
+								<div className="rotate-1 scale-[1.02] cursor-grabbing opacity-95 shadow-2xl shadow-black/30">
+									<DraggableTaskCard
+										task={activeTask}
+										isCompleted={
+											findColumnByTaskId(activeTask.id)?.isCompleted ?? false
+										}
+									/>
+								</div>
 							)}
 						</DragOverlay>
 					</DndContext>
