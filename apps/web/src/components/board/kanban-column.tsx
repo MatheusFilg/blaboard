@@ -35,7 +35,6 @@ export function KanbanColumn({ column, onDelete }: KanbanColumnProps) {
 
 	return (
 		<div className="flex w-72 min-w-72 flex-col gap-3">
-			{/* Column Header */}
 			<div className="flex items-center justify-between pb-2">
 				<div className="flex items-center gap-2">
 					{column.color && (
@@ -76,7 +75,6 @@ export function KanbanColumn({ column, onDelete }: KanbanColumnProps) {
 				)}
 			</div>
 
-			{/* Cards */}
 			<div
 				ref={setNodeRef}
 				className={cn(

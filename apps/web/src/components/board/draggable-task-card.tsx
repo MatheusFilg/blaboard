@@ -99,7 +99,6 @@ export function DraggableTaskCard({
 					: "cursor-grab border-[#2A2A2E] bg-[#16161A] transition-colors hover:border-[#3A3A3E] hover:bg-[#1A1A1E] active:cursor-grabbing",
 			)}
 		>
-			{/* Header */}
 			<div className="flex items-center gap-2">
 				{isCompleted ? (
 					<div className="flex size-[18px] items-center justify-center rounded-full bg-[#32D583]">
@@ -121,7 +120,6 @@ export function DraggableTaskCard({
 				</span>
 			</div>
 
-			{/* Description */}
 			{task.description && (
 				<p
 					className={cn(
@@ -133,7 +131,6 @@ export function DraggableTaskCard({
 				</p>
 			)}
 
-			{/* Footer */}
 			{(firstLabel || task.assignee) && (
 				<div className="flex items-center justify-between">
 					{firstLabel && (
