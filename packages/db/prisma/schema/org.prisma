@@ -4,6 +4,8 @@ model Organization {
   description String
   userIds     String[]
   users       User[]   @relation(fields: [userIds], references: [id])
+  columns     Column[]
+  tasks       Task[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
