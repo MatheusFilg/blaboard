@@ -1,11 +1,14 @@
 "use client";
 
-import Link from "next/link";
+import { useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/lib/types";
 
-interface TaskCardProps {
+interface DraggableTaskCardProps {
 	task: Task;
 	isCompleted?: boolean;
 }
@@ -35,13 +38,74 @@ function stringToColor(str: string): string {
 	return colors[Math.abs(hash) % colors.length];
 }
 
-export function TaskCard({ task, isCompleted = false }: TaskCardProps) {
+export function DraggableTaskCard({
+	task,
+	isCompleted = false,
+}: DraggableTaskCardProps) {
+	const router = useRouter();
+	const hasDragged = useRef(false);
+
+	const {
+		attributes,
+		listeners,
+		setNodeRef,
+		transform,
+		transition,
+		isDragging,
+	} = useSortable({
+		id: task.id,
+		data: {
+			type: "task",
+			task,
+		},
+	});
+
+	const style = {
+		transform: CSS.Transform.toString(transform),
+		transition,
+	};
+
 	const firstLabel = task.labels?.[0];
 
+	const handleMouseDown = () => {
+		hasDragged.current = false;
+	};
+
+	const handleMouseMove = () => {
+		hasDragged.current = true;
+	};
+
+	const handleClick = (e: React.MouseEvent) => {
+		if (!hasDragged.current && !isDragging) {
+			e.preventDefault();
+			e.stopPropagation();
+			router.push(`/task/${task.id}`);
+		}
+	};
+
+	if (isDragging) {
+		return (
+			<div
+				ref={setNodeRef}
+				style={style}
+				className="flex h-auto min-h-[80px] flex-col gap-3 rounded-xl border-2 border-dashed border-[#6366F1] bg-[#6366F1]/10 p-4 opacity-50"
+			/>
+		);
+	}
+
 	return (
-		<Link
-			href={`/task/${task.id}`}
-			className="flex cursor-pointer flex-col gap-3 rounded-xl border border-[#2A2A2E] bg-[#16161A] p-4 transition-colors hover:border-[#3A3A3E] hover:bg-[#1A1A1E]"
+		<div
+			ref={setNodeRef}
+			style={style}
+			{...attributes}
+			{...listeners}
+			onMouseDown={handleMouseDown}
+			onMouseMove={handleMouseMove}
+			onClick={handleClick}
+			className={cn(
+				"flex cursor-pointer flex-col gap-3 rounded-xl border border-[#2A2A2E] bg-[#16161A] p-4 transition-colors hover:border-[#3A3A3E] hover:bg-[#1A1A1E]",
+				isDragging && "opacity-50",
+			)}
 		>
 			{/* Header */}
 			<div className="flex items-center gap-2">
@@ -103,6 +167,6 @@ export function TaskCard({ task, isCompleted = false }: TaskCardProps) {
 					)}
 				</div>
 			)}
-		</Link>
+		</div>
 	);
 }
