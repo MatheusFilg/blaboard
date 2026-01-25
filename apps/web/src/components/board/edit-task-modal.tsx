@@ -1,7 +1,7 @@
 "use client";
 
-import { Calendar, Check, ChevronDown, Plus, X } from "lucide-react";
-import { useState } from "react";
+import { Calendar, Check, ChevronDown, Plus, Save, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
 	Dialog,
 	DialogClose,
@@ -17,15 +17,19 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { Column, CreateTaskInput, TaskLabel } from "@/lib/types";
+import type {
+	Column,
+	TaskLabel,
+	TaskWithDetails,
+	UpdateTaskInput,
+} from "@/lib/types";
 
-interface CreateTaskModalProps {
+interface EditTaskModalProps {
 	isOpen: boolean;
 	onClose: () => void;
+	task: TaskWithDetails;
 	columns: Column[];
-	onSubmit: (
-		data: Omit<CreateTaskInput, "organizationId" | "createdById">,
-	) => Promise<void>;
+	onSubmit: (data: UpdateTaskInput) => Promise<void>;
 }
 
 interface TagProps {
@@ -69,6 +73,16 @@ const dueDates = [
 	},
 ];
 
+function formatDueDate(date: Date | string | null): string {
+	if (!date) return "No due date";
+	const d = new Date(date);
+	return d.toLocaleDateString("en-US", {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+	});
+}
+
 function Tag({ text, color, onRemove }: TagProps) {
 	return (
 		<div
@@ -87,45 +101,62 @@ function Tag({ text, color, onRemove }: TagProps) {
 	);
 }
 
-export function CreateTaskModal({
+export function EditTaskModal({
 	isOpen,
 	onClose,
+	task,
 	columns,
 	onSubmit,
-}: CreateTaskModalProps) {
-	const [name, setName] = useState("");
-	const [description, setDescription] = useState("");
+}: EditTaskModalProps) {
+	const [name, setName] = useState(task.title);
+	const [description, setDescription] = useState(task.description ?? "");
 	const [selectedColumn, setSelectedColumn] = useState<Column | null>(
-		columns[0] ?? null,
+		columns.find((c) => c.id === task.columnId) ?? null,
 	);
-	const [priority, setPriority] = useState(priorities[3]);
-	const [dueDate, setDueDate] = useState(dueDates[4]);
-	const [tags, setTags] = useState<TaskLabel[]>([]);
+	const [priority, setPriority] = useState(
+		priorities.find((p) => p.id === task.priority) ?? priorities[3],
+	);
+	const [dueDate, setDueDate] = useState<(typeof dueDates)[number] | null>(
+		task.dueDate ? null : dueDates[4],
+	);
+	const [customDueDate, setCustomDueDate] = useState<string | null>(
+		task.dueDate ? new Date(task.dueDate).toISOString() : null,
+	);
+	const [tags, setTags] = useState<TaskLabel[]>(task.labels ?? []);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const resetForm = () => {
-		setName("");
-		setDescription("");
-		setSelectedColumn(columns[0] ?? null);
-		setPriority(priorities[3]);
-		setDueDate(dueDates[4]);
-		setTags([]);
-	};
+	useEffect(() => {
+		if (isOpen) {
+			setName(task.title);
+			setDescription(task.description ?? "");
+			setSelectedColumn(columns.find((c) => c.id === task.columnId) ?? null);
+			setPriority(
+				priorities.find((p) => p.id === task.priority) ?? priorities[3],
+			);
+			setDueDate(task.dueDate ? null : dueDates[4]);
+			setCustomDueDate(
+				task.dueDate ? new Date(task.dueDate).toISOString() : null,
+			);
+			setTags(task.labels ?? []);
+		}
+	}, [isOpen, task, columns]);
 
 	const handleSubmit = async () => {
 		if (!name.trim() || !selectedColumn) return;
 
 		setIsSubmitting(true);
 		try {
+			const finalDueDate = dueDate
+				? dueDate.getValue()
+				: (customDueDate ?? undefined);
 			await onSubmit({
 				title: name,
 				description: description || undefined,
 				priority: priority.id,
-				dueDate: dueDate.getValue(),
+				dueDate: finalDueDate,
 				labels: tags.length > 0 ? tags : undefined,
 				columnId: selectedColumn.id,
 			});
-			resetForm();
 			onClose();
 		} finally {
 			setIsSubmitting(false);
@@ -136,30 +167,33 @@ export function CreateTaskModal({
 		setTags(tags.filter((_, i) => i !== index));
 	};
 
-	const handleClose = () => {
-		resetForm();
-		onClose();
+	const handleDueDateSelect = (d: (typeof dueDates)[number]) => {
+		setDueDate(d);
+		setCustomDueDate(null);
 	};
 
+	const dueDateLabel = dueDate
+		? dueDate.label
+		: customDueDate
+			? formatDueDate(customDueDate)
+			: "No due date";
+
 	return (
-		<Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+		<Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
 			<DialogContent
 				showCloseButton={false}
 				className="w-[600px] max-w-[600px] gap-0 rounded-2xl border-none bg-[#1A1A1E] p-0 ring-0 sm:max-w-[600px]"
 			>
-				{/* Header */}
 				<DialogHeader className="flex-row items-center justify-between border-[#2A2A2E] border-b p-6">
 					<DialogTitle className="font-semibold text-[#FAFAF9] text-[22px] -tracking-wide">
-						Create New Task
+						Edit Task
 					</DialogTitle>
 					<DialogClose className="flex size-8 items-center justify-center rounded-lg bg-[#16161A] transition-colors hover:bg-[#1E1E22]">
 						<X className="size-[18px] text-[#6B6B70]" />
 					</DialogClose>
 				</DialogHeader>
 
-				{/* Body */}
 				<div className="flex flex-col gap-5 p-6">
-					{/* Task Name */}
 					<div className="flex flex-col gap-2">
 						<label className="font-medium text-[#6B6B70] text-[13px]">
 							Task Name
@@ -173,7 +207,6 @@ export function CreateTaskModal({
 						/>
 					</div>
 
-					{/* Description */}
 					<div className="flex flex-col gap-2">
 						<label className="font-medium text-[#6B6B70] text-[13px]">
 							Description
@@ -186,12 +219,10 @@ export function CreateTaskModal({
 						/>
 					</div>
 
-					{/* Column & Priority */}
 					<div className="flex gap-4">
-						{/* Column Dropdown */}
 						<div className="flex flex-1 flex-col gap-2">
 							<label className="font-medium text-[#6B6B70] text-[13px]">
-								Column
+								Status
 							</label>
 							<DropdownMenu>
 								<DropdownMenuTrigger className="flex h-11 w-full items-center justify-between rounded-lg border border-[#2A2A2E] bg-[#16161A] px-3.5 outline-none transition-colors hover:border-[#3A3A3E] focus:border-[#6366F1]">
@@ -203,7 +234,7 @@ export function CreateTaskModal({
 											/>
 										)}
 										<span className="text-[#FAFAF9] text-sm">
-											{selectedColumn?.name ?? "Select column"}
+											{selectedColumn?.name ?? "Select status"}
 										</span>
 									</div>
 									<ChevronDown className="size-[18px] text-[#6B6B70]" />
@@ -239,7 +270,6 @@ export function CreateTaskModal({
 							</DropdownMenu>
 						</div>
 
-						{/* Priority Dropdown */}
 						<div className="flex flex-1 flex-col gap-2">
 							<label className="font-medium text-[#6B6B70] text-[13px]">
 								Priority
@@ -287,7 +317,6 @@ export function CreateTaskModal({
 						</div>
 					</div>
 
-					{/* Due Date */}
 					<div className="flex flex-col gap-2">
 						<label className="font-medium text-[#6B6B70] text-[13px]">
 							Due Date
@@ -296,9 +325,7 @@ export function CreateTaskModal({
 							<DropdownMenuTrigger className="flex h-11 w-full items-center justify-between rounded-lg border border-[#2A2A2E] bg-[#16161A] px-3.5 outline-none transition-colors hover:border-[#3A3A3E] focus:border-[#6366F1]">
 								<div className="flex items-center gap-2.5">
 									<Calendar className="size-4 text-[#6B6B70]" />
-									<span className="text-[#FAFAF9] text-sm">
-										{dueDate.label}
-									</span>
+									<span className="text-[#FAFAF9] text-sm">{dueDateLabel}</span>
 								</div>
 								<ChevronDown className="size-[18px] text-[#6B6B70]" />
 							</DropdownMenuTrigger>
@@ -312,10 +339,10 @@ export function CreateTaskModal({
 										<DropdownMenuItem
 											key={d.id}
 											className="flex cursor-pointer items-center justify-between rounded-md px-3 py-2 text-[#FAFAF9] hover:bg-[#16161A] focus:bg-[#16161A]"
-											onClick={() => setDueDate(d)}
+											onClick={() => handleDueDateSelect(d)}
 										>
 											<span className="text-sm">{d.label}</span>
-											{dueDate.id === d.id && (
+											{dueDate?.id === d.id && (
 												<Check className="size-4 text-[#6366F1]" />
 											)}
 										</DropdownMenuItem>
@@ -325,7 +352,6 @@ export function CreateTaskModal({
 						</DropdownMenu>
 					</div>
 
-					{/* Tags */}
 					<div className="flex flex-col gap-2">
 						<label className="font-medium text-[#6B6B70] text-[13px]">
 							Tags
@@ -352,7 +378,6 @@ export function CreateTaskModal({
 					</div>
 				</div>
 
-				{/* Footer */}
 				<DialogFooter className="flex-row justify-end border-[#2A2A2E] border-t p-6">
 					<DialogClose className="flex h-11 items-center justify-center rounded-lg border border-[#2A2A2E] px-5 transition-colors hover:bg-[#16161A]">
 						<span className="font-medium text-[#6B6B70] text-sm">Cancel</span>
@@ -363,9 +388,9 @@ export function CreateTaskModal({
 						disabled={!name.trim() || !selectedColumn || isSubmitting}
 						className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#6366F1] px-6 transition-colors hover:bg-[#5558E3] disabled:cursor-not-allowed disabled:opacity-50"
 					>
-						<Plus className="size-[18px] text-white" />
+						<Save className="size-[18px] text-white" />
 						<span className="font-semibold text-sm text-white">
-							{isSubmitting ? "Creating..." : "Create Task"}
+							{isSubmitting ? "Saving..." : "Save Changes"}
 						</span>
 					</button>
 				</DialogFooter>

@@ -1,9 +1,9 @@
 import prisma from "@blaboard/db";
 import type {
 	CreateTaskInput,
-	UpdateTaskInput,
 	MoveTaskInput,
 	ReorderTasksInput,
+	UpdateTaskInput,
 } from "./schema";
 
 const taskInclude = {

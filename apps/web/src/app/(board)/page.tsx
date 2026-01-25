@@ -26,7 +26,5 @@ export default function Home() {
 	// For now, use a placeholder that will need to be replaced with actual org selection
 	const organizationId = session.user.id; // Temporary: using user ID as org ID
 
-	return (
-		<TaskBoard organizationId={organizationId} userId={session.user.id} />
-	);
+	return <TaskBoard organizationId={organizationId} userId={session.user.id} />;
 }

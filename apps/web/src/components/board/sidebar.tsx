@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
 	Building2,
 	Check,
@@ -11,7 +10,7 @@ import {
 	Settings,
 	Users,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useState } from "react";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -21,6 +20,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 interface Company {
 	id: string;
@@ -81,9 +81,9 @@ export function Sidebar({ className }: SidebarProps) {
 				{/* Logo */}
 				<div className="flex items-center gap-3">
 					<div className="flex size-8 items-center justify-center rounded-lg bg-[#6366F1]">
-						<span className="text-sm font-bold text-white">B</span>
+						<span className="font-bold text-sm text-white">B</span>
 					</div>
-					<span className="text-lg font-bold text-[#FAFAF9]">BeroBoard</span>
+					<span className="font-bold text-[#FAFAF9] text-lg">BeroBoard</span>
 				</div>
 
 				{/* Company Selector Dropdown */}
@@ -94,11 +94,11 @@ export function Sidebar({ className }: SidebarProps) {
 								className="flex size-7 items-center justify-center rounded-md"
 								style={{ backgroundColor: selectedCompany.color }}
 							>
-								<span className="text-[13px] font-semibold text-white">
+								<span className="font-semibold text-[13px] text-white">
 									{selectedCompany.initials}
 								</span>
 							</div>
-							<span className="text-sm font-medium text-[#FAFAF9]">
+							<span className="font-medium text-[#FAFAF9] text-sm">
 								{selectedCompany.name}
 							</span>
 						</div>
@@ -110,7 +110,7 @@ export function Sidebar({ className }: SidebarProps) {
 						sideOffset={8}
 					>
 						<DropdownMenuGroup>
-							<DropdownMenuLabel className="px-2 py-1.5 text-xs font-semibold text-[#6B6B70]">
+							<DropdownMenuLabel className="px-2 py-1.5 font-semibold text-[#6B6B70] text-xs">
 								Companies
 							</DropdownMenuLabel>
 							{companies.map((company) => (
@@ -123,7 +123,7 @@ export function Sidebar({ className }: SidebarProps) {
 										className="flex size-6 items-center justify-center rounded-md"
 										style={{ backgroundColor: company.color }}
 									>
-										<span className="text-[11px] font-semibold text-white">
+										<span className="font-semibold text-[11px] text-white">
 											{company.initials}
 										</span>
 									</div>
@@ -136,7 +136,7 @@ export function Sidebar({ className }: SidebarProps) {
 						</DropdownMenuGroup>
 						<DropdownMenuSeparator className="my-1 bg-[#2A2A2E]" />
 						<DropdownMenuItem className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-2 text-[#6B6B70] hover:bg-[#16161A] hover:text-[#FAFAF9] focus:bg-[#16161A] focus:text-[#FAFAF9]">
-							<div className="flex size-6 items-center justify-center rounded-md border border-dashed border-[#4A4A50]">
+							<div className="flex size-6 items-center justify-center rounded-md border border-[#4A4A50] border-dashed">
 								<Plus className="size-3.5" />
 							</div>
 							<span className="text-sm">Create company</span>
@@ -172,7 +172,7 @@ export function Sidebar({ className }: SidebarProps) {
 
 				{/* Projects */}
 				<div className="flex flex-col gap-2 px-5">
-					<span className="text-xs font-semibold text-[#4A4A50]">Projects</span>
+					<span className="font-semibold text-[#4A4A50] text-xs">Projects</span>
 					{projects.map((project) => (
 						<button
 							type="button"
@@ -185,7 +185,7 @@ export function Sidebar({ className }: SidebarProps) {
 							/>
 							<span
 								className={cn(
-									"text-[13px] font-medium",
+									"font-medium text-[13px]",
 									project.active ? "text-[#FAFAF9]" : "text-[#6B6B70]",
 								)}
 							>
@@ -199,11 +199,11 @@ export function Sidebar({ className }: SidebarProps) {
 			{/* User section */}
 			<div className="flex shrink-0 items-center gap-3 px-5 pt-4">
 				<div className="flex size-9 items-center justify-center rounded-full bg-[#6366F1]">
-					<span className="text-[13px] font-semibold text-white">JS</span>
+					<span className="font-semibold text-[13px] text-white">JS</span>
 				</div>
 				<div className="flex flex-1 flex-col gap-0.5">
-					<span className="text-sm font-medium text-[#FAFAF9]">John Smith</span>
-					<span className="text-xs text-[#6B6B70]">john@company.com</span>
+					<span className="font-medium text-[#FAFAF9] text-sm">John Smith</span>
+					<span className="text-[#6B6B70] text-xs">john@company.com</span>
 				</div>
 			</div>
 		</aside>

@@ -68,11 +68,11 @@ export default function SignUpForm() {
 			{/* Terms */}
 			<p className="max-w-xs text-center text-muted-foreground text-xs leading-relaxed">
 				By continuing, you agree to our{" "}
-				<span className="text-foreground underline-offset-4 hover:underline cursor-pointer">
+				<span className="cursor-pointer text-foreground underline-offset-4 hover:underline">
 					Terms of Service
 				</span>{" "}
 				and{" "}
-				<span className="text-foreground underline-offset-4 hover:underline cursor-pointer">
+				<span className="cursor-pointer text-foreground underline-offset-4 hover:underline">
 					Privacy Policy
 				</span>
 			</p>
