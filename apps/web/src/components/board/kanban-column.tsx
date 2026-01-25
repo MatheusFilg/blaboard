@@ -1,21 +1,21 @@
 "use client";
 
-import { useMemo } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import {
 	SortableContext,
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { MoreHorizontal, Trash2 } from "lucide-react";
-import { DraggableTaskCard } from "./draggable-task-card";
+import { useMemo } from "react";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
 import type { Column } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { DraggableTaskCard } from "./draggable-task-card";
 
 interface KanbanColumnProps {
 	column: Column;
@@ -38,7 +38,6 @@ export function KanbanColumn({ column, onDelete }: KanbanColumnProps) {
 
 	return (
 		<div className="flex w-72 min-w-72 flex-col gap-3">
-			{/* Column Header */}
 			<div className="flex items-center justify-between pb-2">
 				<div className="flex items-center gap-2">
 					{column.color && (
@@ -47,11 +46,11 @@ export function KanbanColumn({ column, onDelete }: KanbanColumnProps) {
 							style={{ backgroundColor: column.color }}
 						/>
 					)}
-					<span className="text-sm font-semibold text-[#6B6B70]">
+					<span className="font-semibold text-[#6B6B70] text-sm">
 						{column.name}
 					</span>
 					<div className="flex size-6 items-center justify-center rounded-xl bg-[#16161A]">
-						<span className="text-xs font-semibold text-[#6B6B70]">
+						<span className="font-semibold text-[#6B6B70] text-xs">
 							{column.tasks.length}
 						</span>
 					</div>
@@ -79,11 +78,10 @@ export function KanbanColumn({ column, onDelete }: KanbanColumnProps) {
 				)}
 			</div>
 
-			{/* Cards */}
 			<div
 				ref={setNodeRef}
 				className={cn(
-					"flex flex-1 flex-col gap-3 overflow-y-auto rounded-lg p-1 transition-colors",
+					"flex min-h-[100px] flex-1 flex-col gap-2 overflow-y-auto rounded-lg p-1",
 					isOver && "bg-[#6366F1]/10",
 				)}
 			>

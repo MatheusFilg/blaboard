@@ -1,10 +1,10 @@
 import { Elysia } from "elysia";
 import {
 	createTaskSchema,
-	updateTaskSchema,
 	moveTaskSchema,
 	reorderTasksSchema,
 	taskIdParamSchema,
+	updateTaskSchema,
 } from "./schema";
 import * as taskUseCases from "./use-case";
 

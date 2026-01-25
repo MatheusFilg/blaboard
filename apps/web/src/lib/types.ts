@@ -26,6 +26,16 @@ export interface Task {
 	updatedAt: Date | string;
 }
 
+export interface TaskWithDetails extends Task {
+	column: {
+		id: string;
+		name: string;
+		color: string | null;
+		isCompleted: boolean;
+	};
+	createdBy: User;
+}
+
 export interface Column {
 	id: string;
 	name: string;

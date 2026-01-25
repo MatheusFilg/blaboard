@@ -1,8 +1,8 @@
 import prisma from "@blaboard/db";
 import type {
 	CreateColumnInput,
-	UpdateColumnInput,
 	ReorderColumnsInput,
+	UpdateColumnInput,
 } from "./schema";
 
 export async function getColumns(organizationId: string) {

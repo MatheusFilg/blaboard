@@ -2,9 +2,9 @@ import { env } from "@blaboard/env/server";
 import { cors } from "@elysiajs/cors";
 import { Elysia } from "elysia";
 import { authMiddleware } from "./middleware/auth.middleware";
-import { authPlugin } from "./plugins/auth.plugin";
 import { columnsRouter } from "./modules/columns/router";
 import { tasksRouter } from "./modules/tasks/router";
+import { authPlugin } from "./plugins/auth.plugin";
 
 const app = new Elysia()
 	.use(
