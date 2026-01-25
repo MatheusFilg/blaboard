@@ -1,5 +1,5 @@
-import { Elysia } from "elysia";
 import { auth } from "@blaboard/auth";
+import { Elysia } from "elysia";
 
 export const authMiddleware = new Elysia({ name: "auth-middleware" })
 	.derive(async ({ request }) => {
@@ -17,7 +17,13 @@ export const authMiddleware = new Elysia({ name: "auth-middleware" })
 			if (!enabled) return;
 
 			onBeforeHandle(
-				({ user, error }: { user: unknown; error: (status: number, body: { message: string }) => Response }) => {
+				({
+					user,
+					error,
+				}: {
+					user: unknown;
+					error: (status: number, body: { message: string }) => Response;
+				}) => {
 					if (!user) {
 						return error(401, {
 							message: "Unauthorized - Authentication required",

@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { Check } from "lucide-react";
-import { cn } from "@/lib/utils";
+import Link from "next/link";
 import type { Task } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface TaskCardProps {
 	task: Task;
@@ -57,7 +57,7 @@ export function TaskCard({ task, isCompleted = false }: TaskCardProps) {
 				)}
 				<span
 					className={cn(
-						"text-sm font-medium",
+						"font-medium text-sm",
 						isCompleted ? "text-[#6B6B70]" : "text-[#FAFAF9]",
 					)}
 				>
@@ -82,7 +82,7 @@ export function TaskCard({ task, isCompleted = false }: TaskCardProps) {
 				<div className="flex items-center justify-between">
 					{firstLabel && (
 						<span
-							className="rounded-md px-2 py-1 text-[11px] font-medium"
+							className="rounded-md px-2 py-1 font-medium text-[11px]"
 							style={{
 								color: firstLabel.color,
 								backgroundColor: `${firstLabel.color}20`,
@@ -96,7 +96,7 @@ export function TaskCard({ task, isCompleted = false }: TaskCardProps) {
 							className="flex size-7 items-center justify-center rounded-full"
 							style={{ backgroundColor: stringToColor(task.assignee.name) }}
 						>
-							<span className="text-[11px] font-semibold text-white">
+							<span className="font-semibold text-[11px] text-white">
 								{getInitials(task.assignee.name)}
 							</span>
 						</div>

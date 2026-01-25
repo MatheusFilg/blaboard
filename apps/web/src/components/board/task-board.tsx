@@ -1,39 +1,38 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	DndContext,
+	type DragEndEvent,
+	type DragOverEvent,
 	DragOverlay,
+	type DragStartEvent,
+	MeasuringStrategy,
 	PointerSensor,
+	pointerWithin,
 	TouchSensor,
 	useSensor,
 	useSensors,
-	pointerWithin,
-	MeasuringStrategy,
-	type DragStartEvent,
-	type DragEndEvent,
-	type DragOverEvent,
 } from "@dnd-kit/core";
-import { arrayMove } from "@dnd-kit/sortable";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Sidebar } from "./sidebar";
-import { BoardHeader } from "./board-header";
-import { KanbanColumn } from "./kanban-column";
-import { CreateTaskModal } from "./create-task-modal";
-import { AddColumn } from "./add-column";
-import { EmptyBoard } from "./empty-board";
-import { DraggableTaskCard } from "./draggable-task-card";
 import {
 	useColumns,
-	useCreateTask,
 	useCreateColumn,
-	useDeleteColumn,
 	useCreateDefaultColumns,
+	useCreateTask,
+	useDeleteColumn,
 	useMoveTask,
 	useReorderTasks,
-} from "@/hooks/use-board";
+} from "@/hooks/board";
+import type { Column, CreateTaskInput, Task } from "@/lib/types";
 import { DEFAULT_COLUMNS } from "@/lib/types";
-import type { Column, Task, CreateTaskInput } from "@/lib/types";
+import { AddColumn } from "./add-column";
+import { BoardHeader } from "./board-header";
+import { CreateTaskModal } from "./create-task-modal";
+import { DraggableTaskCard } from "./draggable-task-card";
+import { EmptyBoard } from "./empty-board";
+import { KanbanColumn } from "./kanban-column";
+import { Sidebar } from "./sidebar";
 
 interface TaskBoardProps {
 	organizationId: string;

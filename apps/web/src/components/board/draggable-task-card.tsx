@@ -1,12 +1,12 @@
 "use client";
 
-import { useRef } from "react";
-import { useRouter } from "next/navigation";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Check } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { useRef } from "react";
 import type { Task } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface DraggableTaskCardProps {
 	task: Task;
@@ -95,7 +95,7 @@ export function DraggableTaskCard({
 			className={cn(
 				"flex flex-col gap-3 rounded-xl border p-4",
 				isDragging
-					? "border-dashed border-[#6366F1]/50 bg-[#6366F1]/5 opacity-40"
+					? "border-[#6366F1]/50 border-dashed bg-[#6366F1]/5 opacity-40"
 					: "cursor-grab border-[#2A2A2E] bg-[#16161A] transition-colors hover:border-[#3A3A3E] hover:bg-[#1A1A1E] active:cursor-grabbing",
 			)}
 		>
@@ -112,7 +112,7 @@ export function DraggableTaskCard({
 				)}
 				<span
 					className={cn(
-						"text-sm font-medium",
+						"font-medium text-sm",
 						isCompleted ? "text-[#6B6B70]" : "text-[#FAFAF9]",
 					)}
 				>
@@ -135,7 +135,7 @@ export function DraggableTaskCard({
 				<div className="flex items-center justify-between">
 					{firstLabel && (
 						<span
-							className="rounded-md px-2 py-1 text-[11px] font-medium"
+							className="rounded-md px-2 py-1 font-medium text-[11px]"
 							style={{
 								color: firstLabel.color,
 								backgroundColor: `${firstLabel.color}20`,
@@ -149,7 +149,7 @@ export function DraggableTaskCard({
 							className="flex size-7 items-center justify-center rounded-full"
 							style={{ backgroundColor: stringToColor(task.assignee.name) }}
 						>
-							<span className="text-[11px] font-semibold text-white">
+							<span className="font-semibold text-[11px] text-white">
 								{getInitials(task.assignee.name)}
 							</span>
 						</div>
