@@ -365,25 +365,25 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 
 	if (isLoading) {
 		return (
-			<div className="flex h-screen items-center justify-center bg-[#0B0B0E]">
-				<div className="text-[#6B6B70]">Loading board...</div>
+			<div className="flex h-screen items-center justify-center bg-background">
+				<div className="text-muted-foreground">Loading board...</div>
 			</div>
 		);
 	}
 
 	if (error) {
 		return (
-			<div className="flex h-screen items-center justify-center bg-[#0B0B0E]">
-				<div className="text-[#E85A4F]">{error.message}</div>
+			<div className="flex h-screen items-center justify-center bg-background">
+				<div className="text-destructive">{error.message}</div>
 			</div>
 		);
 	}
 
 	return (
-		<div className="flex h-screen overflow-hidden bg-[#0B0B0E]">
+		<div className="flex h-screen overflow-hidden bg-background">
 			<Sidebar />
 
-			<main className="flex flex-1 flex-col gap-6 overflow-hidden p-6">
+			<main className="flex flex-1 flex-col gap-5 overflow-hidden p-5">
 				<BoardHeader
 					title="Project Overview"
 					subtitle={`${totalTasks} tasks · ${columns.length} columns`}
@@ -423,7 +423,7 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 
 						<DragOverlay dropAnimation={null}>
 							{activeTask && (
-								<div className="rotate-1 scale-[1.02] cursor-grabbing opacity-95 shadow-2xl shadow-black/30">
+								<div className="rotate-1 scale-[1.02] cursor-grabbing opacity-95 shadow-lg">
 									<DraggableTaskCard
 										task={activeTask}
 										isCompleted={

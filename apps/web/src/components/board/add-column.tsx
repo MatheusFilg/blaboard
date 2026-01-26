@@ -1,7 +1,7 @@
 "use client";
 
-import { Plus, X } from "lucide-react";
-import { useState } from "react";
+import { Plus, X } from "@phosphor-icons/react";
+import { useRef, useState } from "react";
 
 interface AddColumnProps {
 	onAdd: (name: string) => void;
@@ -11,6 +11,7 @@ interface AddColumnProps {
 export function AddColumn({ onAdd, isLoading }: AddColumnProps) {
 	const [isEditing, setIsEditing] = useState(false);
 	const [name, setName] = useState("");
+	const inputRef = useRef<HTMLInputElement>(null);
 
 	const handleSubmit = () => {
 		if (!name.trim()) return;
@@ -32,33 +33,38 @@ export function AddColumn({ onAdd, isLoading }: AddColumnProps) {
 		}
 	};
 
+	const handleStartEditing = () => {
+		setIsEditing(true);
+		setTimeout(() => inputRef.current?.focus(), 0);
+	};
+
 	if (isEditing) {
 		return (
-			<div className="flex w-72 min-w-72 flex-col gap-2">
+			<div className="flex w-64 min-w-64 flex-col gap-2">
 				<input
+					ref={inputRef}
 					type="text"
 					value={name}
 					onChange={(e) => setName(e.target.value)}
 					onKeyDown={handleKeyDown}
 					placeholder="Column name..."
-					autoFocus
-					className="h-10 rounded-lg border border-[#2A2A2E] bg-[#16161A] px-3 text-[#FAFAF9] text-sm placeholder:text-[#4A4A50] focus:border-[#6366F1] focus:outline-none"
+					className="h-9 rounded-lg border border-border bg-background px-3 text-foreground text-sm placeholder:text-muted-foreground focus:border-foreground/30 focus:outline-none"
 				/>
 				<div className="flex gap-2">
 					<button
 						type="button"
 						onClick={handleSubmit}
 						disabled={!name.trim() || isLoading}
-						className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#6366F1] font-medium text-sm text-white transition-colors hover:bg-[#5558E3] disabled:cursor-not-allowed disabled:opacity-50"
+						className="flex h-8 flex-1 items-center justify-center rounded-lg bg-foreground font-medium text-background text-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
 					>
 						{isLoading ? "Adding..." : "Add column"}
 					</button>
 					<button
 						type="button"
 						onClick={handleCancel}
-						className="flex size-9 items-center justify-center rounded-lg border border-[#2A2A2E] text-[#6B6B70] transition-colors hover:bg-[#16161A] hover:text-[#FAFAF9]"
+						className="flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
 					>
-						<X className="size-4" />
+						<X size={14} />
 					</button>
 				</div>
 			</div>
@@ -68,11 +74,11 @@ export function AddColumn({ onAdd, isLoading }: AddColumnProps) {
 	return (
 		<button
 			type="button"
-			onClick={() => setIsEditing(true)}
-			className="flex h-10 w-72 min-w-72 items-center justify-center gap-2 rounded-lg border border-[#2A2A2E] border-dashed text-[#6B6B70] transition-colors hover:border-[#3A3A3E] hover:bg-[#16161A] hover:text-[#FAFAF9]"
+			onClick={handleStartEditing}
+			className="flex h-9 w-64 min-w-64 items-center justify-center gap-1.5 rounded-lg border border-border border-dashed text-muted-foreground transition-colors hover:border-foreground/30 hover:bg-accent hover:text-foreground"
 		>
-			<Plus className="size-4" />
-			<span className="font-medium text-sm">Add column</span>
+			<Plus size={14} />
+			<span className="text-sm">Add column</span>
 		</button>
 	);
 }
