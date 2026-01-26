@@ -23,8 +23,14 @@ import {
 	useDeleteColumn,
 	useMoveTask,
 	useReorderTasks,
+	useUpdateColumn,
 } from "@/hooks/board";
-import type { Column, CreateTaskInput, Task } from "@/lib/types";
+import type {
+	Column,
+	CreateTaskInput,
+	Task,
+	UpdateColumnInput,
+} from "@/lib/types";
 import { DEFAULT_COLUMNS } from "@/lib/types";
 import { AddColumn } from "./add-column";
 import { BoardHeader } from "./board-header";
@@ -74,6 +80,7 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 	const { data: columns = [], isLoading, error } = useColumns(organizationId);
 	const createTaskMutation = useCreateTask(organizationId);
 	const createColumnMutation = useCreateColumn(organizationId);
+	const updateColumnMutation = useUpdateColumn(organizationId);
 	const deleteColumnMutation = useDeleteColumn(organizationId);
 	const createDefaultColumnsMutation = useCreateDefaultColumns(organizationId);
 	const moveTaskMutation = useMoveTask(organizationId);
@@ -325,15 +332,25 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 		}
 	};
 
-	const handleCreateColumn = async (name: string) => {
+	const handleCreateColumn = async (name: string, color?: string) => {
 		try {
 			await createColumnMutation.mutateAsync({
 				name,
+				color,
 				organizationId,
 			});
 			toast.success("Column created successfully");
 		} catch {
 			toast.error("Failed to create column");
+		}
+	};
+
+	const handleUpdateColumn = async (id: string, input: UpdateColumnInput) => {
+		try {
+			await updateColumnMutation.mutateAsync({ id, input });
+			toast.success("Column updated successfully");
+		} catch {
+			toast.error("Failed to update column");
 		}
 	};
 
@@ -413,6 +430,7 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 									key={column.id}
 									column={column}
 									onDelete={handleDeleteColumn}
+									onUpdate={handleUpdateColumn}
 								/>
 							))}
 							<AddColumn
