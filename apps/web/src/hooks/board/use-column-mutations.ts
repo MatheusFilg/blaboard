@@ -102,7 +102,6 @@ export function useCreateDefaultColumns(organizationId: string) {
 		mutationFn: async (
 			columns: { name: string; color?: string; isCompleted?: boolean }[],
 		) => {
-			// Create columns sequentially to maintain order
 			const results: Column[] = [];
 			for (const col of columns) {
 				const { data, error } = await api.columns.post({

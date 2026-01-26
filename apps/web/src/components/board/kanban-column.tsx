@@ -45,7 +45,6 @@ export function KanbanColumn({
 	);
 	const inputRef = useRef<HTMLInputElement>(null);
 
-	// Sortable for column reordering
 	const {
 		attributes,
 		listeners,
@@ -61,7 +60,6 @@ export function KanbanColumn({
 		},
 	});
 
-	// Droppable for tasks
 	const { setNodeRef: setDroppableNodeRef, isOver } = useDroppable({
 		id: column.id,
 		data: {

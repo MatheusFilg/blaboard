@@ -154,7 +154,6 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 
 			lastMoveRef.current = null;
 
-			// Check if dragging a column
 			if (activeData?.type === "column-sortable") {
 				const column = activeData.column as Column;
 				setActiveColumn(column);
@@ -164,7 +163,6 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 				return;
 			}
 
-			// Otherwise it's a task
 			const column = findColumnByTaskId(activeId);
 			if (column) {
 				const taskIndex = column.tasks.findIndex((t) => t.id === activeId);
@@ -188,11 +186,9 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 
 			const activeData = active.data.current;
 
-			// If dragging a column, handle column reordering
 			if (activeData?.type === "column-sortable") {
 				const overData = over.data.current;
 
-				// Only reorder if over another column
 				if (overData?.type === "column-sortable") {
 					const activeColumnId = (activeData.column as Column).id;
 					const overColumnId = (overData.column as Column).id;
@@ -216,7 +212,6 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 				return;
 			}
 
-			// Task drag over logic
 			if (!activeTask) return;
 
 			const activeId = active.id as string;
@@ -304,7 +299,6 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 
 			isPendingMutation.current = true;
 
-			// Handle column drag end
 			if (activeData?.type === "column-sortable") {
 				const startIndex = columnDragStartIndex.current;
 				setActiveColumn(null);
@@ -320,7 +314,6 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 				const currentIndex = localColumns.findIndex((c) => c.id === column.id);
 
 				if (currentIndex !== startIndex) {
-					// Reorder columns on server
 					const reorderedColumns = localColumns.map((col, index) => ({
 						id: col.id,
 						order: index,
@@ -339,7 +332,6 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 				return;
 			}
 
-			// Handle task drag end
 			const startState = dragStartState.current;
 
 			setActiveTask(null);

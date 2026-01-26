@@ -74,8 +74,16 @@ export function DraggableTaskCard({
 		}
 	};
 
+	const handleKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key === "Enter" || e.key === " ") {
+			e.preventDefault();
+			router.push(`/task/${task.id}`);
+		}
+	};
+
 	return (
-		<div
+		<button
+			type="button"
 			ref={setNodeRef}
 			style={style}
 			{...attributes}
@@ -83,8 +91,9 @@ export function DraggableTaskCard({
 			onMouseDown={handleMouseDown}
 			onMouseMove={handleMouseMove}
 			onClick={handleClick}
+			onKeyDown={handleKeyDown}
 			className={cn(
-				"flex flex-col gap-2 rounded-lg border p-3",
+				"flex w-full flex-col gap-2 rounded-lg border p-3 text-left",
 				isDragging
 					? "border-foreground/20 border-dashed bg-accent/50 opacity-40"
 					: "cursor-grab border-border bg-card transition-colors hover:border-foreground/20 active:cursor-grabbing",
@@ -140,6 +149,6 @@ export function DraggableTaskCard({
 					)}
 				</div>
 			)}
-		</div>
+		</button>
 	);
 }
