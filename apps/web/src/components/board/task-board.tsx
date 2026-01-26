@@ -13,6 +13,11 @@ import {
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
+import {
+	arrayMove,
+	horizontalListSortingStrategy,
+	SortableContext,
+} from "@dnd-kit/sortable";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -22,6 +27,7 @@ import {
 	useCreateTask,
 	useDeleteColumn,
 	useMoveTask,
+	useReorderColumns,
 	useReorderTasks,
 	useUpdateColumn,
 } from "@/hooks/board";
@@ -66,12 +72,15 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [activeTask, setActiveTask] = useState<Task | null>(null);
+	const [activeColumn, setActiveColumn] = useState<Column | null>(null);
 	const [localColumns, setLocalColumns] = useState<Column[]>([]);
 
 	const dragStartState = useRef<{
 		columnId: string;
 		taskIndex: number;
 	} | null>(null);
+
+	const columnDragStartIndex = useRef<number | null>(null);
 
 	const isPendingMutation = useRef(false);
 
@@ -85,12 +94,13 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 	const createDefaultColumnsMutation = useCreateDefaultColumns(organizationId);
 	const moveTaskMutation = useMoveTask(organizationId);
 	const reorderTasksMutation = useReorderTasks(organizationId);
+	const reorderColumnsMutation = useReorderColumns(organizationId);
 
 	useEffect(() => {
-		if (!activeTask && !isPendingMutation.current) {
+		if (!activeTask && !activeColumn && !isPendingMutation.current) {
 			setLocalColumns(columns);
 		}
-	}, [columns, activeTask]);
+	}, [columns, activeTask, activeColumn]);
 
 	const sensors = useSensors(
 		useSensor(PointerSensor, {
@@ -122,6 +132,11 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 		[filteredColumns],
 	);
 
+	const columnIds = useMemo(
+		() => localColumns.map((col) => `column-${col.id}`),
+		[localColumns],
+	);
+
 	const findColumnByTaskId = useCallback(
 		(taskId: string): Column | undefined => {
 			return localColumns.find((col) =>
@@ -134,13 +149,25 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 	const handleDragStart = useCallback(
 		(event: DragStartEvent) => {
 			const { active } = event;
-			const taskId = active.id as string;
+			const activeId = active.id as string;
+			const activeData = active.data.current;
 
 			lastMoveRef.current = null;
 
-			const column = findColumnByTaskId(taskId);
+			// Check if dragging a column
+			if (activeData?.type === "column-sortable") {
+				const column = activeData.column as Column;
+				setActiveColumn(column);
+				columnDragStartIndex.current = localColumns.findIndex(
+					(c) => c.id === column.id,
+				);
+				return;
+			}
+
+			// Otherwise it's a task
+			const column = findColumnByTaskId(activeId);
 			if (column) {
-				const taskIndex = column.tasks.findIndex((t) => t.id === taskId);
+				const taskIndex = column.tasks.findIndex((t) => t.id === activeId);
 				const task = column.tasks[taskIndex];
 				if (task) {
 					setActiveTask(task);
@@ -151,13 +178,46 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 				}
 			}
 		},
-		[findColumnByTaskId],
+		[findColumnByTaskId, localColumns],
 	);
 
 	const handleDragOver = useCallback(
 		(event: DragOverEvent) => {
 			const { active, over } = event;
-			if (!over || !activeTask) return;
+			if (!over) return;
+
+			const activeData = active.data.current;
+
+			// If dragging a column, handle column reordering
+			if (activeData?.type === "column-sortable") {
+				const overData = over.data.current;
+
+				// Only reorder if over another column
+				if (overData?.type === "column-sortable") {
+					const activeColumnId = (activeData.column as Column).id;
+					const overColumnId = (overData.column as Column).id;
+
+					if (activeColumnId !== overColumnId) {
+						setLocalColumns((currentColumns) => {
+							const oldIndex = currentColumns.findIndex(
+								(c) => c.id === activeColumnId,
+							);
+							const newIndex = currentColumns.findIndex(
+								(c) => c.id === overColumnId,
+							);
+
+							if (oldIndex !== -1 && newIndex !== -1) {
+								return arrayMove(currentColumns, oldIndex, newIndex);
+							}
+							return currentColumns;
+						});
+					}
+				}
+				return;
+			}
+
+			// Task drag over logic
+			if (!activeTask) return;
 
 			const activeId = active.id as string;
 			const overId = over.id as string;
@@ -239,15 +299,53 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 
 	const handleDragEnd = useCallback(
 		async (event: DragEndEvent) => {
-			const { active, over } = event;
-			const startState = dragStartState.current;
+			const { active } = event;
+			const activeData = active.data.current;
 
 			isPendingMutation.current = true;
+
+			// Handle column drag end
+			if (activeData?.type === "column-sortable") {
+				const startIndex = columnDragStartIndex.current;
+				setActiveColumn(null);
+				columnDragStartIndex.current = null;
+
+				if (startIndex === null) {
+					isPendingMutation.current = false;
+					setLocalColumns(columns);
+					return;
+				}
+
+				const column = activeData.column as Column;
+				const currentIndex = localColumns.findIndex((c) => c.id === column.id);
+
+				if (currentIndex !== startIndex) {
+					// Reorder columns on server
+					const reorderedColumns = localColumns.map((col, index) => ({
+						id: col.id,
+						order: index,
+					}));
+
+					try {
+						await reorderColumnsMutation.mutateAsync(reorderedColumns);
+						toast.success("Columns reordered successfully");
+					} catch {
+						toast.error("Failed to reorder columns");
+						setLocalColumns(columns);
+					}
+				}
+
+				isPendingMutation.current = false;
+				return;
+			}
+
+			// Handle task drag end
+			const startState = dragStartState.current;
 
 			setActiveTask(null);
 			dragStartState.current = null;
 
-			if (!over || !startState) {
+			if (!startState) {
 				isPendingMutation.current = false;
 				setLocalColumns(columns);
 				return;
@@ -306,12 +404,20 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 			isPendingMutation.current = false;
 			lastMoveRef.current = null;
 		},
-		[columns, localColumns, moveTaskMutation, reorderTasksMutation],
+		[
+			columns,
+			localColumns,
+			moveTaskMutation,
+			reorderTasksMutation,
+			reorderColumnsMutation,
+		],
 	);
 
 	const handleDragCancel = useCallback(() => {
 		setActiveTask(null);
+		setActiveColumn(null);
 		dragStartState.current = null;
+		columnDragStartIndex.current = null;
 		isPendingMutation.current = false;
 		lastMoveRef.current = null;
 		setLocalColumns(columns);
@@ -424,20 +530,25 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 						onDragEnd={handleDragEnd}
 						onDragCancel={handleDragCancel}
 					>
-						<div className="flex flex-1 gap-4 overflow-x-auto pb-4">
-							{filteredColumns.map((column) => (
-								<KanbanColumn
-									key={column.id}
-									column={column}
-									onDelete={handleDeleteColumn}
-									onUpdate={handleUpdateColumn}
+						<SortableContext
+							items={columnIds}
+							strategy={horizontalListSortingStrategy}
+						>
+							<div className="flex flex-1 gap-4 overflow-x-auto pb-4">
+								{filteredColumns.map((column) => (
+									<KanbanColumn
+										key={column.id}
+										column={column}
+										onDelete={handleDeleteColumn}
+										onUpdate={handleUpdateColumn}
+									/>
+								))}
+								<AddColumn
+									onAdd={handleCreateColumn}
+									isLoading={createColumnMutation.isPending}
 								/>
-							))}
-							<AddColumn
-								onAdd={handleCreateColumn}
-								isLoading={createColumnMutation.isPending}
-							/>
-						</div>
+							</div>
+						</SortableContext>
 
 						<DragOverlay dropAnimation={null}>
 							{activeTask && (
@@ -448,6 +559,27 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 											findColumnByTaskId(activeTask.id)?.isCompleted ?? false
 										}
 									/>
+								</div>
+							)}
+							{activeColumn && (
+								<div className="w-64 rotate-1 scale-[1.02] cursor-grabbing rounded-lg border border-border/50 bg-card/80 p-3 opacity-95 shadow-lg backdrop-blur-sm">
+									<div className="flex items-center gap-2 pb-2">
+										{activeColumn.color && (
+											<div
+												className="size-2 rounded-full"
+												style={{ backgroundColor: activeColumn.color }}
+											/>
+										)}
+										<span className="font-medium text-foreground text-sm">
+											{activeColumn.name}
+										</span>
+										<span className="text-muted-foreground text-xs">
+											{activeColumn.tasks.length}
+										</span>
+									</div>
+									<div className="flex min-h-[60px] items-center justify-center rounded-lg bg-accent/30 text-muted-foreground text-xs">
+										{activeColumn.tasks.length} tasks
+									</div>
 								</div>
 							)}
 						</DragOverlay>

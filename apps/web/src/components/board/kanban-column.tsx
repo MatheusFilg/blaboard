@@ -3,10 +3,13 @@
 import { useDroppable } from "@dnd-kit/core";
 import {
 	SortableContext,
+	useSortable,
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
 	Check,
+	DotsSixVertical,
 	DotsThree,
 	PencilSimple,
 	Trash,
@@ -42,13 +45,35 @@ export function KanbanColumn({
 	);
 	const inputRef = useRef<HTMLInputElement>(null);
 
-	const { setNodeRef, isOver } = useDroppable({
+	// Sortable for column reordering
+	const {
+		attributes,
+		listeners,
+		setNodeRef: setSortableNodeRef,
+		transform,
+		transition,
+		isDragging,
+	} = useSortable({
+		id: `column-${column.id}`,
+		data: {
+			type: "column-sortable",
+			column,
+		},
+	});
+
+	// Droppable for tasks
+	const { setNodeRef: setDroppableNodeRef, isOver } = useDroppable({
 		id: column.id,
 		data: {
 			type: "column",
 			column,
 		},
 	});
+
+	const style = {
+		transform: CSS.Transform.toString(transform),
+		transition: transition ?? undefined,
+	};
 
 	const taskIds = useMemo(
 		() => column.tasks.map((task) => task.id),
@@ -144,9 +169,26 @@ export function KanbanColumn({
 	}
 
 	return (
-		<div className="flex w-64 min-w-64 flex-col rounded-lg border border-border/50 bg-card/30 p-3 shadow-sm">
-			<div className="flex items-center justify-between pb-2">
+		<div
+			ref={setSortableNodeRef}
+			style={style}
+			className={cn(
+				"flex w-64 min-w-64 flex-col rounded-lg border border-border/50 bg-card/30 p-3 shadow-sm",
+				isDragging && "opacity-50",
+			)}
+		>
+			{/* Draggable Header */}
+			<div
+				{...attributes}
+				{...listeners}
+				className="flex cursor-grab items-center justify-between pb-2 active:cursor-grabbing"
+			>
 				<div className="flex items-center gap-2">
+					<DotsSixVertical
+						size={14}
+						weight="bold"
+						className="text-muted-foreground"
+					/>
 					{column.color && (
 						<div
 							className="size-2 rounded-full"
@@ -163,7 +205,11 @@ export function KanbanColumn({
 
 				{(onDelete || onUpdate) && (
 					<DropdownMenu>
-						<DropdownMenuTrigger className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+						<DropdownMenuTrigger
+							className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+							onClick={(e) => e.stopPropagation()}
+							onPointerDown={(e) => e.stopPropagation()}
+						>
 							<DotsThree size={16} weight="bold" />
 						</DropdownMenuTrigger>
 						<DropdownMenuContent
@@ -194,8 +240,9 @@ export function KanbanColumn({
 				)}
 			</div>
 
+			{/* Task Drop Area */}
 			<div
-				ref={setNodeRef}
+				ref={setDroppableNodeRef}
 				className={cn(
 					"flex min-h-[100px] flex-1 flex-col gap-2 overflow-y-auto rounded-lg p-0.5",
 					isOver && "bg-accent/50",
