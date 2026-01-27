@@ -1,0 +1,30 @@
+name: "Suporte"
+description: "Precisa de ajuda para usar o produto?"
+title: "[Suporte]: "
+labels: ["support"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Descreva sua duvida para podermos ajudar.
+  - type: textarea
+    id: duvida
+    attributes:
+      label: "Duvida"
+      description: "Explique o que voce esta tentando fazer."
+    validations:
+      required: true
+  - type: textarea
+    id: contexto
+    attributes:
+      label: "Contexto"
+      description: "Ambiente, prints, links, logs, etc."
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: "Checklist"
+      options:
+        - label: "Verifiquei a documentacao"
+          required: false

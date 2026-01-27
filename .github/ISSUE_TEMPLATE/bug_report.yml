@@ -1,0 +1,56 @@
+name: "Bug report"
+description: "Reporte um problema para que possamos corrigir."
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por reportar um bug. Preencha os campos abaixo.
+  - type: input
+    id: ambiente
+    attributes:
+      label: "Ambiente"
+      description: "Sistema operacional, navegador, versao do app, etc."
+      placeholder: "Ex.: macOS 14, Chrome 121, app 1.2.3"
+    validations:
+      required: true
+  - type: textarea
+    id: passos
+    attributes:
+      label: "Passos para reproduzir"
+      description: "Liste o passo a passo para reproduzir o problema."
+      placeholder: "1. ...\n2. ...\n3. ..."
+    validations:
+      required: true
+  - type: textarea
+    id: esperado
+    attributes:
+      label: "Comportamento esperado"
+      placeholder: "O que deveria acontecer?"
+    validations:
+      required: true
+  - type: textarea
+    id: atual
+    attributes:
+      label: "Comportamento atual"
+      placeholder: "O que acontece hoje?"
+    validations:
+      required: true
+  - type: textarea
+    id: evidencias
+    attributes:
+      label: "Evidencias"
+      description: "Inclua prints, logs ou videos (se houver)."
+      placeholder: "Cole links ou anexos aqui."
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: "Checklist"
+      options:
+        - label: "Verifiquei se ja existe uma issue igual"
+          required: true
+        - label: "Consigo reproduzir o problema"
+          required: true
