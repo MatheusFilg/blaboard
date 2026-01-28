@@ -14,7 +14,7 @@ import {
 	Warning,
 } from "@phosphor-icons/react";
 import { useState } from "react";
-import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
+import { AnimatedThemeToggler } from "~/components/ui/animated-theme-toggler";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -22,8 +22,8 @@ import {
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
+} from "~/components/ui/dropdown-menu";
+import { cn } from "~/lib/utils";
 
 interface Organization {
 	id: string;

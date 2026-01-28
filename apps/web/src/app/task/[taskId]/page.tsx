@@ -11,21 +11,21 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useState } from "react";
 import { toast } from "sonner";
-import { EditTaskModal, Sidebar } from "@/components/board";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { EditTaskModal, Sidebar } from "~/components/board";
+import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "~/components/ui/dropdown-menu";
 import {
 	useColumns,
 	useDeleteTask,
 	useTask,
 	useUpdateTask,
-} from "@/hooks/board";
-import type { UpdateTaskInput } from "@/lib/types";
+} from "~/hooks/board";
+import type { UpdateTaskInput } from "~/lib/types";
 
 const priorityColors = {
 	HIGH: "#ef4444",
