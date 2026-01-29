@@ -1,16 +1,16 @@
-## O que mudou?
+## What has changed?
 - 
 
-## Por que essa mudança?
+## Why was this change made?
 - 
 
-## Como testar?
+## How to test?
 - 
 
-## Evidências (prints/logs)
+## Evidence (screenshots/logs)
 - 
 
 ## Checklist
-- [ ] Testes passaram
-- [ ] Documentação atualizada (se necessário)
-- [ ] Sem mudanças de breaking (ou foi comunicado)
+- [ ] Tests passed
+- [ ] Documentation updated (if necessary)
+- [ ] No breaking changes (or it was communicated)

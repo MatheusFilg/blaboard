@@ -1,38 +1,38 @@
 name: "Task"
-description: "Crie uma tarefa tecnica ou organizacional."
+description: "Create a technical or organizational task."
 title: "[Task]: "
 labels: ["task"]
 body:
   - type: markdown
     attributes:
       value: |
-        Use este formulario para tarefas internas.
+        Use this form for internal tasks.
   - type: textarea
-    id: objetivo
+    id: objective
     attributes:
-      label: "Objetivo"
-      description: "Descreva o que deve ser entregue."
+      label: "Objective"
+      description: "Describe what should be delivered."
     validations:
       required: true
   - type: textarea
-    id: escopo
+    id: scope
     attributes:
-      label: "Escopo"
-      description: "O que esta incluso e o que esta fora."
+      label: "Scope"
+      description: "What is included and what is out of scope."
     validations:
       required: false
   - type: textarea
-    id: criterios
+    id: criteria
     attributes:
-      label: "Criterios de aceite"
-      description: "Como sabemos que esta pronto?"
+      label: "Acceptance criteria"
+      description: "How do we know it's done?"
       placeholder: "- ...\n- ..."
     validations:
       required: true
   - type: input
-    id: prazo
+    id: deadline
     attributes:
-      label: "Prazo (opcional)"
-      placeholder: "Ex.: 2026-02-15"
+      label: "Deadline (optional)"
+      placeholder: "e.g.: 2026-02-15"
     validations:
       required: false

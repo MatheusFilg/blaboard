@@ -1,9 +1,11 @@
 import { env } from "@blaboard/env/server";
 import { cors } from "@elysiajs/cors";
+import { openapi } from "@elysiajs/openapi";
 import { Elysia } from "elysia";
-import { authMiddleware } from "./middleware/auth.middleware";
-import { columnsRouter } from "./modules/columns/router";
-import { tasksRouter } from "./modules/tasks/router";
+
+import { columnsRouter } from "../../modules/columns/router";
+import { tasksRouter } from "../../modules/tasks/router";
+import { openapiConfig } from "../config/openapi";
 import { authPlugin } from "./plugins/auth.plugin";
 
 const app = new Elysia()
@@ -15,13 +17,11 @@ const app = new Elysia()
 			credentials: true,
 		}),
 	)
+	.use(openapi(openapiConfig))
 	.use(authPlugin)
-	.use(authMiddleware)
-	.get("/", () => ({ message: "API is running" }))
-	.use(columnsRouter)
-	.use(tasksRouter)
-	.listen(env.PORT, () => {
-		console.log(`Server is running on http://localhost:${env.PORT}`);
-	});
+	.use([columnsRouter, tasksRouter])
+	.listen(env.PORT, ({ hostname, port }) =>
+		console.log(`Server is running on http://${hostname}:${port}`),
+	);
 
 export type App = typeof app;

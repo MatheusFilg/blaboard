@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="assets/blaboard.png" alt="Blaboard - Kanban Board Open Source" width="600" />
+  <img src="assets/blaboard.png" alt="Blaboard - Open Source Kanban Board" width="600" />
 </p>
 
 <h1 align="center">Blaboard</h1>
 
 <p align="center">
-  <strong>Um Kanban Board open source feito pela comunidade, para a comunidade.</strong>
+  <strong>An open source Kanban Board made by the community, for the community.</strong>
 </p>
 
 <p align="center">
@@ -13,189 +13,199 @@
     <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License MIT" />
   </a>
   <a href="https://berolab.app">
-    <img src="https://img.shields.io/badge/comunidade-BeroLab-purple.svg" alt="BeroLab" />
+    <img src="https://img.shields.io/badge/community-BeroLab-purple.svg" alt="BeroLab" />
   </a>
 </p>
 
 ---
 
-## Sobre o Projeto
+## About the Project
 
-O **Blaboard** é um quadro Kanban open source desenvolvido pela comunidade da [BeroLab](https://berolab.app). Este projeto foi criado com o objetivo de ajudar desenvolvedores iniciantes a terem sua primeira experiência com contribuição em projetos open source, enquanto construímos juntos uma ferramenta útil para gerenciamento de tarefas.
+**Blaboard** is an open source Kanban board developed by the [BeroLab](https://berolab.app) community. This project was created with the goal of helping beginner developers have their first experience contributing to open source projects, while we build together a useful task management tool.
 
-**Qualquer pessoa pode contribuir!** Seja você um desenvolvedor experiente ou alguém que está começando agora, você é bem-vindo(a) para participar.
+**Anyone can contribute!** Whether you're an experienced developer or someone just getting started, you're welcome to participate.
 
-## Tecnologias Utilizadas
+## Technologies Used
 
-Este projeto utiliza tecnologias modernas do ecossistema JavaScript/TypeScript:
+This project uses modern technologies from the JavaScript/TypeScript ecosystem:
 
-| Categoria | Tecnologia |
-|-----------|------------|
+| Category | Technology |
+|----------|------------|
 | **Runtime** | [Bun](https://bun.sh) |
 | **Frontend** | [Next.js 16](https://nextjs.org) + [React 19](https://react.dev) |
-| **Estilização** | [Tailwind CSS v4](https://tailwindcss.com) + [shadcn/ui](https://ui.shadcn.com) |
+| **Styling** | [Tailwind CSS v4](https://tailwindcss.com) + [shadcn/ui](https://ui.shadcn.com) |
 | **Backend** | [ElysiaJS](https://elysiajs.com) |
-| **Banco de Dados** | [MongoDB](https://www.mongodb.com) + [Prisma ORM](https://www.prisma.io) |
-| **Autenticação** | [Better Auth](https://www.better-auth.com) (Google e GitHub) |
+| **Database** | [MongoDB](https://www.mongodb.com) + [Prisma ORM](https://www.prisma.io) |
+| **Authentication** | [Better Auth](https://www.better-auth.com) (Google and GitHub) |
 | **Monorepo** | [Turborepo](https://turbo.build) |
-| **Qualidade de Código** | [Biome](https://biomejs.dev) + [Husky](https://typicode.github.io/husky) |
+| **Code Quality** | [Biome](https://biomejs.dev) + [Husky](https://typicode.github.io/husky) |
 
-## Estrutura do Projeto
+## Project Structure
 
 ```
 blaboard/
 ├── apps/
-│   ├── web/           # Aplicação frontend (Next.js)
-│   └── server/        # API backend (ElysiaJS)
+│   ├── web/           # Frontend application (Next.js)
+│   └── server/        # Backend API (ElysiaJS)
 ├── packages/
-│   ├── auth/          # Configuração de autenticação
-│   ├── db/            # Schema e configuração do banco de dados
-│   ├── env/           # Variáveis de ambiente tipadas
-│   └── config/        # Configurações compartilhadas
+│   ├── auth/          # Authentication configuration
+│   ├── db/            # Database schema and configuration
+│   ├── env/           # Type-safe environment variables
+│   └── config/        # Shared configurations
 ```
 
-## Como Começar
+## Getting Started
 
-### Pré-requisitos
+### Prerequisites
 
-Antes de começar, certifique-se de ter instalado:
+Before you begin, make sure you have installed:
 
-- [Bun](https://bun.sh) (versão 1.3.2 ou superior)
-- [Docker](https://www.docker.com) (para rodar o MongoDB localmente)
+- [Bun](https://bun.sh) (version 1.3.2 or higher)
+- [Docker](https://www.docker.com) (to run MongoDB locally)
 - [Git](https://git-scm.com)
 
-### Passo a Passo
+### Step by Step
 
-#### 1. Faça um fork do repositório
+#### 1. Fork the repository
 
-Clique no botão "Fork" no canto superior direito desta página para criar uma cópia do repositório na sua conta.
+Click the "Fork" button in the top right corner of this page to create a copy of the repository in your account.
 
-#### 2. Clone o repositório
+#### 2. Clone the repository
 
 ```bash
-git clone https://github.com/SEU-USUARIO/blaboard.git
+git clone https://github.com/YOUR-USERNAME/blaboard.git
 cd blaboard
 ```
 
-#### 3. Instale as dependências
+#### 3. Install dependencies
 
 ```bash
 bun install
 ```
 
-#### 4. Configure as variáveis de ambiente
+#### 4. Configure environment variables
 
-Copie os arquivos de exemplo:
+Copy the example files:
 
 ```bash
 cp apps/server/.env.example apps/server/.env
 cp apps/web/.env.example apps/web/.env
 ```
 
-Edite os arquivos `.env` com suas configurações. Para autenticação social (Google/GitHub), você precisará criar aplicativos OAuth em:
+Edit the `.env` files with your settings. For social authentication (Google/GitHub), you'll need to create OAuth applications at:
 - [Google Cloud Console](https://console.cloud.google.com)
 - [GitHub Developer Settings](https://github.com/settings/developers)
 
-#### 5. Inicie o banco de dados
+#### 5. Start the database
 
 ```bash
-bun run db:start     # Inicia o MongoDB no Docker
-bun run db:generate  # Gera o cliente Prisma
-bun run db:push      # Aplica o schema no banco
+bun run db:start     # Start MongoDB in Docker
+bun run db:generate  # Generate Prisma client
+bun run db:push      # Apply schema to database
 ```
 
-#### 6. Execute o projeto
+#### 6. Run the project
 
 ```bash
 bun run dev
 ```
 
-Pronto! Acesse:
+Done! Access:
 - **Frontend:** [http://localhost:3001](http://localhost:3001)
 - **Backend:** [http://localhost:3000](http://localhost:3000)
 
-## Scripts Disponíveis
+## Available Scripts
 
-| Comando | Descrição |
-|---------|-----------|
-| `bun run dev` | Inicia todas as aplicações em modo desenvolvimento |
-| `bun run dev:web` | Inicia apenas o frontend |
-| `bun run dev:server` | Inicia apenas o backend |
-| `bun run build` | Compila todas as aplicações |
-| `bun run check-types` | Verifica tipos TypeScript |
-| `bun run check` | Formata e faz lint do código |
-| `bun run db:start` | Inicia o container do MongoDB |
-| `bun run db:push` | Aplica o schema no banco de dados |
-| `bun run db:generate` | Gera o cliente Prisma |
-| `bun run db:studio` | Abre a interface do Prisma Studio |
-| `bun run db:stop` | Para o container do MongoDB |
+| Command | Description |
+|---------|-------------|
+| `bun run dev` | Start all applications in development mode |
+| `bun run dev:web` | Start only the frontend |
+| `bun run dev:server` | Start only the backend |
+| `bun run build` | Build all applications |
+| `bun run check-types` | Check TypeScript types |
+| `bun run check` | Format and lint code |
+| `bun run db:start` | Start MongoDB container |
+| `bun run db:push` | Apply schema to database |
+| `bun run db:generate` | Generate Prisma client |
+| `bun run db:studio` | Open Prisma Studio interface |
+| `bun run db:stop` | Stop MongoDB container |
 
-## Como Contribuir
+## How to Contribute
 
-Estamos sempre procurando colaboradores! Veja como você pode participar:
+We're always looking for collaborators! Here's how you can participate:
 
-### 1. Encontre uma issue
+### 1. Find an issue
 
-Acesse a aba [Issues](https://github.com/BeroLab/blaboard/issues) do repositório. Procure por issues com as labels:
+Go to the [Issues](https://github.com/BeroLab/blaboard/issues) tab of the repository. Look for issues with the labels:
 
-- `good first issue` - Ideal para quem está começando
-- `help wanted` - Precisamos de ajuda com essas
+- `good first issue` - Ideal for beginners
+- `help wanted` - We need help with these
 
-### 2. Comente na issue
+### 2. Comment on the issue
 
-Deixe um comentário dizendo que você quer trabalhar naquela issue. Isso evita que duas pessoas trabalhem na mesma coisa.
+Leave a comment saying you want to work on that issue. This prevents two people from working on the same thing.
 
-### 3. Crie sua branch
+### 3. Create your branch
 
-```bash
-git checkout -b feat/nome-da-feature
-# ou
-git checkout -b fix/nome-do-bug
-```
-
-### 4. Faça suas alterações
-
-Desenvolva sua solução seguindo os padrões do projeto. Antes de commitar:
+**Important:** Always create your branch from `staging`, which is our reference branch for development.
 
 ```bash
-bun run check  # Formata e verifica o código
+git checkout staging
+git pull origin staging
+git checkout -b feat/feature-name
+# or
+git checkout -b fix/bug-name
 ```
 
-### 5. Envie um Pull Request
+### 4. Make your changes
+
+Develop your solution following the project standards. Before committing:
+
+```bash
+bun run check  # Format and check code
+```
+
+### 5. Submit a Pull Request
 
 ```bash
 git add .
-git commit -m "feat: descrição da sua alteração"
-git push origin feat/nome-da-feature
+git commit -m "feat: description of your change"
+git push origin feat/feature-name
 ```
 
-Depois, abra um Pull Request no GitHub descrevendo suas alterações.
+Then, open a Pull Request on GitHub describing your changes.
 
-## Participe da Comunidade
+## Design
 
-### Reuniões Semanais
+Interested in contributing to UI/UX? Check out our Figma file with the project prototype:
 
-Fazemos reuniões **todas as quartas-feiras às 18h (horário de Brasília)** na nossa comunidade do Discord. Nessas reuniões discutimos:
+[Blaboard - Figma Prototype](https://www.figma.com/design/fwgpxrsQ9mFoA30JR3c7xu/Blaboard---Prototype?t=Nz5gRhSQHB09UtHp-0) - Maintained by [Matheus Henry](https://github.com/WatheusHenry), social link: [X](https://x.com/watheushenry)
 
-- Progresso do projeto
-- Novas features
-- Dúvidas dos contribuidores
-- Planejamento das próximas sprints
+## Join the Community
 
-### Como entrar na comunidade
+### Weekly Meetings
 
-1. Acesse [berolab.app](https://berolab.app) e faça seu cadastro gratuito
-2. Entre no nosso servidor do Discord
-3. Apresente-se no canal de boas-vindas
+We hold meetings **every Wednesday at 6 PM (Brasilia time)** in our Discord community. In these meetings we discuss:
 
-Para mais informações, entre em contato pelo nosso servidor da BeroLab no Discord.
+- Project progress
+- New features
+- Contributors' questions
+- Planning for upcoming sprints
 
-## Licença
+### How to join the community
 
-Este projeto está licenciado sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+1. Go to [berolab.app](https://berolab.app) and sign up for free
+2. Join our Discord server
+3. Introduce yourself in the welcome channel
+
+For more information, contact us through our BeroLab Discord server.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
 
 ---
 
 <p align="center">
-  Feito com carinho pela comunidade <a href="https://berolab.app">BeroLab</a>
+  Made with love by the <a href="https://berolab.app">BeroLab</a> community
 </p>

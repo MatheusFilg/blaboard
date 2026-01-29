@@ -1,48 +1,48 @@
 name: "Bug report"
-description: "Reporte um problema para que possamos corrigir."
+description: "Report a problem so we can fix it."
 title: "[Bug]: "
 labels: ["bug"]
 body:
   - type: markdown
     attributes:
       value: |
-        Obrigado por reportar um bug. Preencha os campos abaixo.
+        Thank you for reporting a bug. Please fill in the fields below.
   - type: input
-    id: ambiente
+    id: environment
     attributes:
-      label: "Ambiente"
-      description: "Sistema operacional, navegador, versao do app, etc."
-      placeholder: "Ex.: macOS 14, Chrome 121, app 1.2.3"
+      label: "Environment"
+      description: "Operating system, browser, app version, etc."
+      placeholder: "e.g.: macOS 14, Chrome 121, app 1.2.3"
     validations:
       required: true
   - type: textarea
-    id: passos
+    id: steps
     attributes:
-      label: "Passos para reproduzir"
-      description: "Liste o passo a passo para reproduzir o problema."
+      label: "Steps to reproduce"
+      description: "List the step-by-step process to reproduce the problem."
       placeholder: "1. ...\n2. ...\n3. ..."
     validations:
       required: true
   - type: textarea
-    id: esperado
+    id: expected
     attributes:
-      label: "Comportamento esperado"
-      placeholder: "O que deveria acontecer?"
+      label: "Expected behavior"
+      placeholder: "What should happen?"
     validations:
       required: true
   - type: textarea
-    id: atual
+    id: actual
     attributes:
-      label: "Comportamento atual"
-      placeholder: "O que acontece hoje?"
+      label: "Actual behavior"
+      placeholder: "What happens today?"
     validations:
       required: true
   - type: textarea
-    id: evidencias
+    id: evidence
     attributes:
-      label: "Evidencias"
-      description: "Inclua prints, logs ou videos (se houver)."
-      placeholder: "Cole links ou anexos aqui."
+      label: "Evidence"
+      description: "Include screenshots, logs, or videos (if any)."
+      placeholder: "Paste links or attachments here."
     validations:
       required: false
   - type: checkboxes
@@ -50,7 +50,7 @@ body:
     attributes:
       label: "Checklist"
       options:
-        - label: "Verifiquei se ja existe uma issue igual"
+        - label: "I checked if a similar issue already exists"
           required: true
-        - label: "Consigo reproduzir o problema"
+        - label: "I can reproduce the problem"
           required: true
