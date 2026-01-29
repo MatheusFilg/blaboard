@@ -5,16 +5,16 @@ import { getColumnsSucessResponseSchema } from "./schemas";
 import { getColumnsUseCase } from "./use-case";
 
 export const getColumnsRouter = new Elysia().use(authMiddleware).get(
-	"/",
-	async ({ session, status }) => {
-		const result = await getColumnsUseCase(session.activeOrganizationId);
-		return status(200, result);
-	},
-	{
-		requireOrganization: true,
-		response: {
-			200: getColumnsSucessResponseSchema,
-			...authMiddlewareErrorSchemas,
-		},
-	},
+  "/",
+  async ({ session, status }) => {
+    const result = await getColumnsUseCase(session.activeOrganizationId);
+    return status(200, result);
+  },
+  {
+    requireOrganization: true,
+    response: {
+      200: getColumnsSucessResponseSchema,
+      ...authMiddlewareErrorSchemas,
+    },
+  },
 );
