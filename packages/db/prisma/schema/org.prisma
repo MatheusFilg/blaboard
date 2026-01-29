@@ -1,13 +1,13 @@
 model Organization {
-  id          String   @id @map("_id")
-  name        String
-  description String
-  userIds     String[]
-  users       User[]   @relation(fields: [userIds], references: [id])
-  columns     Column[]
-  tasks       Task[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @map("_id")
+  name      String
+  slug      String   @unique
+  logo      String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  columns Column[]
+  tasks   Task[]
 
   @@map("organization")
 }

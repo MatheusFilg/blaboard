@@ -5,18 +5,16 @@ enum Role {
 }
 
 model User {
-  id              String         @id @map("_id")
-  name            String
-  email           String
-  emailVerified   Boolean        @default(false)
-  image           String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  sessions        Session[]
-  accounts        Account[]
-  organizations   Organization[] @relation(fields: [organizationIds], references: [id])
-  organizationIds String[]
-  role            Role
+  id            String   @id @map("_id")
+  name          String
+  email         String
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  role          Role
 
   assignedTasks Task[]
   createdTasks  Task[] @relation("TaskCreatedBy")
@@ -26,15 +24,16 @@ model User {
 }
 
 model Session {
-  id        String   @id @map("_id")
-  expiresAt DateTime
-  token     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ipAddress String?
-  userAgent String?
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                   String   @id @map("_id")
+  expiresAt            DateTime
+  token                String
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  ipAddress            String?
+  userAgent            String?
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeOrganizationId String?
 
   @@unique([token])
   @@index([userId])
@@ -71,4 +70,34 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+model Member {
+  id             String   @id @map("_id")
+  organizationId String
+  userId         String
+  role           String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
+  @@map("member")
+}
+
+model Invitation {
+  id             String   @id @map("_id")
+  organizationId String
+  email          String
+  role           String?
+  status         String
+  expiresAt      DateTime
+  inviterId      String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([email, organizationId])
+  @@index([organizationId])
+  @@map("invitation")
 }

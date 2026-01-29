@@ -4,6 +4,11 @@ export interface User {
 	image: string | null;
 }
 
+export interface CreateOrganizationInput {
+	name: string;
+	description?: string;
+}
+
 export interface TaskLabel {
 	text: string;
 	color: string;
