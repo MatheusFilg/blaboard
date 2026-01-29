@@ -10,10 +10,14 @@ import {
 	Plus,
 	Question,
 	SignOut,
+	Trash,
 	Users,
 	Warning,
 } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useMemo, useCallback } from "react";
+import { toast } from "sonner";
+import { authClient } from "~/lib/auth-client";
 import { AnimatedThemeToggler } from "~/components/ui/animated-theme-toggler";
 import {
 	DropdownMenu,
@@ -23,13 +27,9 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import { cn } from "~/lib/utils";
-
-interface Organization {
-	id: string;
-	name: string;
-	initials: string;
-}
+import type { Organization } from "better-auth/plugins";
 
 interface NavItem {
 	icon: React.ReactNode;
@@ -43,11 +43,14 @@ interface SidebarProps {
 	className?: string;
 }
 
-const organizations: Organization[] = [
-	{ id: "1", name: "Acme Inc.", initials: "A" },
-	{ id: "2", name: "Stark Industries", initials: "SI" },
-	{ id: "3", name: "Wayne Enterprises", initials: "WE" },
-];
+function getInitials(name: string): string {
+	return name
+		.split(" ")
+		.map((word) => word[0])
+		.join("")
+		.toUpperCase()
+		.slice(0, 2);
+}
 
 const mainNavItems: NavItem[] = [
 	{ icon: <House size={18} />, label: "Home" },
@@ -70,9 +73,127 @@ const bottomNavItems: NavItem[] = [
 ];
 
 export function Sidebar({ className }: SidebarProps) {
-	const [selectedOrg, setSelectedOrg] = useState<Organization>(
-		organizations[0],
+	const router = useRouter();
+	const { data: session } = authClient.useSession();
+	const { data: organizations = [], isPending: isLoading } =
+		authClient.useListOrganizations();
+
+	const [orgToDelete, setOrgToDelete] = useState<{
+		id: string;
+		name: string;
+	} | null>(null);
+	const [isSettingActive, setIsSettingActive] = useState(false);
+	const [isDeletingOrg, setIsDeletingOrg] = useState(false);
+
+	const activeOrgId = session?.session?.activeOrganizationId;
+	const organizationsByCreation = useMemo(
+		() =>
+		  [...(organizations ?? [])].sort(
+			(a, b) =>
+			  +new Date((a as Organization).createdAt ?? 0) -
+			  +new Date((b as Organization).createdAt ?? 0),
+		  ),
+		[organizations],
+	  );
+	const selectedOrg = useMemo(
+		() => organizations?.find((org) => org.id === activeOrgId),
+		[organizations, activeOrgId],
 	);
+
+	const handleOrgSwitch = useCallback(
+		async (orgId: string) => {
+			if (orgId === activeOrgId || isSettingActive) return;
+
+			setIsSettingActive(true);
+
+			const { error } = await authClient.organization.setActive({
+				organizationId: orgId,
+			});
+
+			if (error) {
+				toast.error("Failed to switch organization");
+				setIsSettingActive(false);
+				return;
+			}
+
+			await authClient.getSession({ fetchOptions: { cache: "no-cache" } });
+			toast.success("Organization switched successfully");
+			setIsSettingActive(false);
+			router.refresh();
+		},
+		[activeOrgId, router, isSettingActive],
+	);
+
+	const handleCreateOrg = useCallback(() => {
+		router.push("/onboarding");
+	}, [router]);
+
+	const handleDeleteOrg = useCallback(
+		(e: React.MouseEvent, orgId: string, orgName: string) => {
+			e.stopPropagation();
+
+			if (!organizations || organizations.length === 1) {
+				toast.error("Cannot delete your only organization");
+				return;
+			}
+
+			setOrgToDelete({ id: orgId, name: orgName });
+		},
+		[organizations],
+	);
+
+	const confirmDeleteOrg = useCallback(async () => {
+		if (!orgToDelete || isDeletingOrg || !organizationsByCreation.length) return;
+
+		const { id: orgId } = orgToDelete;
+		const isActiveOrg = orgId === activeOrgId;
+
+		setIsDeletingOrg(true);
+
+		const currentIndex = organizationsByCreation.findIndex((org) => org.id === orgId);
+		let nextOrg;
+
+		if (currentIndex === organizationsByCreation.length - 1) {
+			nextOrg = organizationsByCreation[currentIndex - 1];
+		} else {
+			nextOrg = organizationsByCreation[currentIndex + 1];
+		}
+
+		if (isActiveOrg && nextOrg) {
+			const { error: setActiveError } =
+				await authClient.organization.setActive({
+					organizationId: nextOrg.id,
+				});
+
+			if (setActiveError) {
+				toast.error("Failed to switch organization");
+				setIsDeletingOrg(false);
+				return;
+			}
+
+			await authClient.getSession({ fetchOptions: { cache: "no-cache" } });
+		}
+
+		const { error: deleteError } = await authClient.organization.delete({
+			organizationId: orgId,
+		});
+
+		if (deleteError) {
+			toast.error("Failed to delete organization");
+			setIsDeletingOrg(false);
+			return;
+		}
+
+		toast.success("Organization deleted successfully");
+		setOrgToDelete(null);
+		setIsDeletingOrg(false);
+		router.refresh();
+	}, [orgToDelete, activeOrgId, organizationsByCreation, router, isDeletingOrg]);
+
+	const handleSignOut = useCallback(async () => {
+		await authClient.signOut();
+		router.push("/login");
+	}, [router]);
 
 	return (
 		<aside
@@ -120,12 +241,22 @@ export function Sidebar({ className }: SidebarProps) {
 				<div className="px-2">
 					<DropdownMenu>
 						<DropdownMenuTrigger className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent">
-							<div className="flex size-5 items-center justify-center rounded bg-foreground font-semibold text-[10px] text-background">
-								{selectedOrg.initials}
-							</div>
-							<span className="flex-1 text-left font-medium text-foreground">
-								{selectedOrg.name}
-							</span>
+							{isLoading ? (
+								<div className="flex size-5 animate-pulse items-center justify-center rounded bg-muted" />
+							) : selectedOrg ? (
+								<>
+									<div className="flex size-5 items-center justify-center rounded bg-foreground font-semibold text-[10px] text-background">
+										{getInitials(selectedOrg.name)}
+									</div>
+									<span className="flex-1 text-left font-medium text-foreground">
+										{selectedOrg.name}
+									</span>
+								</>
+							) : (
+								<span className="flex-1 text-left text-muted-foreground">
+									No organization
+								</span>
+							)}
 							<CaretUpDown size={14} className="text-muted-foreground" />
 						</DropdownMenuTrigger>
 						<DropdownMenuContent
@@ -134,26 +265,38 @@ export function Sidebar({ className }: SidebarProps) {
 							sideOffset={4}
 						>
 							<DropdownMenuGroup>
-								{organizations.map((org) => (
+								{organizationsByCreation?.map((org) => (
 									<DropdownMenuItem
 										key={org.id}
 										className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-foreground text-sm hover:bg-accent focus:bg-accent"
-										onClick={() => setSelectedOrg(org)}
+										onClick={() => handleOrgSwitch(org.id)}
+										disabled={isSettingActive}
 									>
 										<div className="flex size-5 items-center justify-center rounded bg-foreground font-semibold text-[10px] text-background">
-											{org.initials}
+											{getInitials(org.name)}
 										</div>
 										<span className="flex-1">{org.name}</span>
-										{selectedOrg.id === org.id && (
+										{selectedOrg?.id === org.id && (
 											<Check size={14} className="text-foreground" />
 										)}
+										<button
+											type="button"
+											onClick={(e) => handleDeleteOrg(e, org.id, org.name)}
+											disabled={isDeletingOrg}
+											className="rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+										>
+											<Trash size={14} />
+										</button>
 									</DropdownMenuItem>
 								))}
 							</DropdownMenuGroup>
 							<DropdownMenuSeparator className="my-1 bg-border" />
-							<DropdownMenuItem className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-muted-foreground text-sm hover:bg-accent hover:text-foreground focus:bg-accent focus:text-foreground">
+							<DropdownMenuItem
+								className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-muted-foreground text-sm hover:bg-accent hover:text-foreground focus:bg-accent focus:text-foreground"
+								onClick={handleCreateOrg}
+							>
 								<Plus size={14} />
-								<span>Create organization</span>
+								<span>Create organization </span>
 							</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
@@ -200,12 +343,25 @@ export function Sidebar({ className }: SidebarProps) {
 
 				<button
 					type="button"
+					onClick={handleSignOut}
 					className="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-destructive text-sm transition-colors hover:bg-destructive/10"
 				>
 					<SignOut size={18} />
 					<span>Sign out</span>
 				</button>
 			</div>
+
+			<ConfirmDialog
+				open={!!orgToDelete}
+				onOpenChange={(open) => !open && setOrgToDelete(null)}
+				title="Delete organization"
+				description={`Are you sure you want to delete "${orgToDelete?.name}"? This action cannot be undone.`}
+				onConfirm={confirmDeleteOrg}
+				confirmText="Delete"
+				cancelText="Cancel"
+				variant="destructive"
+				isLoading={isDeletingOrg}
+			/>
 		</aside>
 	);
 }
