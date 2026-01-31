@@ -3,6 +3,12 @@ import { zDate } from "@/shared/schemas/zod-date";
 
 export const taskPrioritySchema = z.enum(["HIGH", "MEDIUM", "LOW", "NONE"]);
 
+const taskLabelSchema = z.object({
+	id: z.string(),
+	text: z.string(),
+	color: z.string(),
+});
+
 export const createTaskBodySchema = z.object({
 	title: z.string().min(1),
 	description: z.string().optional(),
@@ -41,7 +47,8 @@ export const createTaskResponseSchema = z.object({
 	priority: taskPrioritySchema,
 	dueDate: zDate.nullable(),
 	order: z.number(),
-	labels: z.array(z.string()),
+	labels: z.array(taskLabelSchema),
+	labelIds: z.array(z.string()),
 	columnId: z.string(),
 	assigneeId: z.string().nullable(),
 	organizationId: z.string(),

@@ -17,7 +17,7 @@ export async function createTaskUseCase(
 			description: input.description,
 			priority: input.priority,
 			dueDate: input.dueDate ? new Date(input.dueDate) : null,
-			labels: input.labels,
+			labelIds: input.labels || [],
 			order: lastTask ? lastTask.order + 1 : 0,
 			columnId: input.columnId,
 			organizationId,
@@ -28,6 +28,9 @@ export async function createTaskUseCase(
 			column: true,
 			assignee: {
 				select: { id: true, name: true, image: true },
+			},
+			labels: {
+				select: { id: true, text: true, color: true },
 			},
 		},
 	});
