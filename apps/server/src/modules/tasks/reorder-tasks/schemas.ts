@@ -1,12 +1,13 @@
 import { z } from "zod";
 import { zDate } from "@/shared/schemas/zod-date";
+import { zHexColor } from "@/shared/schemas/zod-hex-color";
 
 const taskPrioritySchema = z.enum(["HIGH", "MEDIUM", "LOW", "NONE"]);
 
 const taskLabelSchema = z.object({
 	id: z.string(),
 	text: z.string(),
-	color: z.string(),
+	color: zHexColor,
 });
 
 export const reorderTasksBodySchema = z.object({

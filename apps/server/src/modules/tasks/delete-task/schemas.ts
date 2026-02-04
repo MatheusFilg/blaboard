@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { zDate } from "@/shared/schemas/zod-date";
+import { zHexColor } from "@/shared/schemas/zod-hex-color";
 
 export const deleteTaskParamsSchema = z.object({
 	id: z.string().min(1),
@@ -10,7 +11,7 @@ const taskPrioritySchema = z.enum(["HIGH", "MEDIUM", "LOW", "NONE"]);
 const taskLabelSchema = z.object({
 	id: z.string(),
 	text: z.string(),
-	color: z.string(),
+	color: zHexColor,
 });
 
 export const deleteTaskResponseSchema = z.object({

@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { zDate } from "@/shared/schemas/zod-date";
+import { zHexColor } from "@/shared/schemas/zod-hex-color";
 
 const assignedLabelSchema = z.object({
 	text: z.string(),
-	color: z.string(),
+	color: zHexColor,
 });
 
 export const assignLabelParamsSchema = z.object({

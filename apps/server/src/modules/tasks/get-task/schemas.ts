@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { apiErrorSchema } from "@/shared/schemas/api-error";
 import { zDate } from "@/shared/schemas/zod-date";
+import { zHexColor } from "@/shared/schemas/zod-hex-color";
 
 export const getTaskParamsSchema = z.object({
 	id: z.string().min(1),
@@ -11,13 +12,13 @@ const taskPrioritySchema = z.enum(["HIGH", "MEDIUM", "LOW", "NONE"]);
 const taskLabelSchema = z.object({
 	id: z.string(),
 	text: z.string(),
-	color: z.string(),
+	color: zHexColor,
 });
 
 const columnSchema = z.object({
 	id: z.string(),
 	name: z.string(),
-	color: z.string().nullable(),
+	color: zHexColor.nullable(),
 	order: z.number(),
 	isCompleted: z.boolean(),
 	organizationId: z.string(),

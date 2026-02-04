@@ -1,5 +1,6 @@
 import z from "zod";
 import { zDate } from "@/shared/schemas/zod-date";
+import { zHexColor } from "@/shared/schemas/zod-hex-color";
 
 export const removeLabelParamsSchema = z.object({
 	taskId: z.string().min(1),
@@ -9,7 +10,7 @@ export const removeLabelParamsSchema = z.object({
 const remainingLabelSchema = z.object({
 	id: z.string(),
 	text: z.string(),
-	color: z.string(),
+	color: zHexColor,
 });
 
 export const removeLabelResponseSchema = z.object({
