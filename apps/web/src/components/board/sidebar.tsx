@@ -13,6 +13,7 @@ import {
   Trash,
   Users,
   Warning,
+  TagIcon
 } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { useState, useMemo, useCallback } from "react";
@@ -30,11 +31,13 @@ import {
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import { cn } from "~/lib/utils";
 import type { Organization } from "better-auth/plugins";
+import type { Route } from "next";
+import { usePathname } from "next/navigation";
 
 interface NavItem {
   icon: React.ReactNode;
   label: string;
-  href?: string;
+  href?: Route;
   active?: boolean;
   shortcut?: string;
 }
@@ -62,9 +65,10 @@ const mainNavItems: NavItem[] = [
 ];
 
 const workspaceNavItems: NavItem[] = [
-  { icon: <Kanban size={18} />, label: "Board", active: true },
+  { icon: <Kanban size={18} />, label: "Board", href: "/"},
   { icon: <Users size={18} />, label: "Team" },
   { icon: <Gear size={18} />, label: "Settings" },
+  { icon: <TagIcon size={18} />, label: "Labels", href: "/labels"},
 ];
 
 const bottomNavItems: NavItem[] = [
@@ -74,6 +78,7 @@ const bottomNavItems: NavItem[] = [
 
 export function Sidebar({ className }: SidebarProps) {
   const router = useRouter();
+  const pathname = usePathname()
   const { data: session } = authClient.useSession();
   const { data: organizations = [], isPending: isLoading } =
     authClient.useListOrganizations();
@@ -205,6 +210,16 @@ export function Sidebar({ className }: SidebarProps) {
     router.push("/login");
   }, [router]);
 
+  const handleNavigation = useCallback((href?: Route) => {
+    if(!href || href === window.location.pathname) return
+    router.push(href);
+  }, [router]);
+
+  const isNavItemActive = useCallback((item: NavItem) => {
+    if (!item.href) return false
+    return item.href === pathname;
+  }, [pathname]);
+  
   return (
     <aside
       className={cn(
@@ -320,10 +335,11 @@ export function Sidebar({ className }: SidebarProps) {
               key={item.label}
               className={cn(
                 "flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors",
-                item.active
+                isNavItemActive(item)
                   ? "bg-accent font-medium text-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-foreground",
               )}
+              onClick={() => handleNavigation(item.href)}
             >
               {item.icon}
               <span>{item.label}</span>
