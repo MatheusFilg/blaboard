@@ -26,3 +26,24 @@ export function useCreateLabel(organizationId: string) {
 		},
 	});
 }
+
+export function useDeleteLabel(organizationId: string) {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: async (id: string) => {
+			const { error } = await api.labels({id}).delete();
+
+			if (error) {
+				throw new Error("Failed to delete label");
+			}
+
+			return id;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: labelsKeys.labels(organizationId),
+			});
+		},
+	});
+}

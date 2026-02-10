@@ -5,8 +5,11 @@ import { useMemo, useState } from "react";
 import { CreateLabelModal } from "./create-label-modal";
 import type { CreateLabelInput } from "~/lib/types";
 import { toast } from "sonner";
-import { useCreateLabel } from "~/hooks/labels/use-labels-mutations";
+import { useCreateLabel, useDeleteLabel } from "~/hooks/labels/use-labels-mutations";
 import { LabelsHeader } from "./labels-header";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
+import { DotsThreeIcon, PencilIcon, TrashIcon } from "@phosphor-icons/react";
+import { DeleteLabelModal } from "./delete-label-modal";
 
 interface LabelsTableProps {
   organizationId: string;
@@ -15,7 +18,11 @@ interface LabelsTableProps {
 export function LabelsTable({ organizationId }: LabelsTableProps) {
   const { data: labels } = useLabels(organizationId)
   const [searchQuery, setSearchQuery] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedLabelId, setSelectedLabelId] = useState<string | null>(null);
+  
+  const deleteLabelMutation = useDeleteLabel(organizationId)
   const createLabelMutation = useCreateLabel(organizationId)
   
   const filteredLabels = useMemo(() => {
@@ -40,6 +47,15 @@ export function LabelsTable({ organizationId }: LabelsTableProps) {
     }
   };
   
+  const handleDeleteLabel = async (id: string) => {
+    try {
+      await deleteLabelMutation.mutateAsync(id);
+      toast.success("Label deleted successfully");
+    } catch {
+      toast.error("Failed to delete label");
+    }
+  };
+  
   function formatDate(date: Date | string | null): string {
     if (!date) return "Not set";
     const d = new Date(date);
@@ -58,7 +74,7 @@ export function LabelsTable({ organizationId }: LabelsTableProps) {
         <LabelsHeader
           title="Labels"
           subtitle={`${filteredLabels?.length ?? 0} Labels`}
-          onNewLabel={() => setIsModalOpen(true)}
+          onNewLabel={() => setIsCreateModalOpen(true)}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
         />
@@ -77,16 +93,13 @@ export function LabelsTable({ organizationId }: LabelsTableProps) {
 									<th className="px-5 py-3 text-left font-semibold text-muted-foreground text-sm">
 										Updated
 									</th>
-									<th className="px-5 py-3 text-right font-semibold text-muted-foreground text-sm">
-										Actions
-									</th>
 								</tr>
 							</thead>
 							<tbody>
               {filteredLabels?.map((label) => {
                 return (
                   <tr
-                    className="border-border border-b transition-colors last:border-b-0 hover:bg-secondary/30"
+                    className="group h-14 border-border border-b transition-colors last:border-b-0 hover:bg-secondary/30"
                     key={label.id}
                   >
                     <td className="flex items-center gap-2 px-5 py-3">
@@ -107,23 +120,41 @@ export function LabelsTable({ organizationId }: LabelsTableProps) {
   										{formatDate(label.updatedAt)}
                     </td>
                     
-  									<td className="px-5 py-3 text-right">
-  										<div className="flex items-center justify-end gap-2">
-  											<Button
-                          type="button"
-                          variant="outline"
-  												className="text-muted-foreground transition-colors hover:text-foreground"
-  											>
-  												Edit
-  											</Button>
-  											<Button
-                          type="button"
-                          variant="destructive"
-                					className="text-destructive transition-colors hover:text-destructive/90"
-  											>
-  												Delete
-  											</Button>
-  										</div>
+                    <td className="min-w-24 px-5 py-3 text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            render={
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="rounded-sm text-muted-foreground transition-opacity hover:text-foreground data-open:bg-secondary data-open:opacity-100 opacity-0 group-hover:opacity-100"
+                              >
+                                <DotsThreeIcon className="size-5" />
+                              </Button>
+                            }
+                          />
+                          <DropdownMenuContent align="end" className="rounded-sm">
+                            <DropdownMenuItem
+                              onSelect={(e) => e.preventDefault()}
+                              variant="default"
+                            >
+                              <PencilIcon className="size-5" />
+                              <span>Edit</span>
+                            </DropdownMenuItem>
+                            
+                            <DropdownMenuItem
+                              variant="destructive"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setSelectedLabelId(label.id)
+                              setIsDeleteModalOpen(true)
+                              }}
+                            >
+                              <TrashIcon className="size-5" />
+                              <span>Delete</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
   									</td>
                   </tr>
               )})}
@@ -133,9 +164,19 @@ export function LabelsTable({ organizationId }: LabelsTableProps) {
         </main>
       
       <CreateLabelModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
         onSubmit={handleCreateLabel}
+      />
+      
+      <DeleteLabelModal
+        labelId={selectedLabelId}
+        onSubmit={handleDeleteLabel}
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false)
+          setSelectedLabelId(null)
+        }}
       />
 			</div>
   )
