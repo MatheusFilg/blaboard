@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "~/lib/api";
 import type {
+	Column,
 	CreateTaskInput,
 	MoveTaskInput,
 	Task,
@@ -10,7 +11,12 @@ import type {
 } from "~/lib/types";
 import { boardKeys } from "./keys";
 
-export function useCreateTask(organizationId: string) {
+export function useCreateTask(
+	organizationId: string,
+	options?: {
+		onSuccess?: (task: Task) => void;
+	},
+) {
 	const queryClient = useQueryClient();
 
 	return useMutation({
@@ -31,15 +37,21 @@ export function useCreateTask(organizationId: string) {
 
 			return data as Task;
 		},
-		onSuccess: () => {
+		onSuccess: (task) => {
 			queryClient.invalidateQueries({
 				queryKey: boardKeys.columns(organizationId),
 			});
+			options?.onSuccess?.(task);
 		},
 	});
 }
 
-export function useUpdateTask(organizationId: string) {
+export function useUpdateTask(
+	organizationId: string,
+	options?: {
+		onSuccess?: (task: Task) => void;
+	},
+) {
 	const queryClient = useQueryClient();
 
 	return useMutation({
@@ -58,15 +70,21 @@ export function useUpdateTask(organizationId: string) {
 
 			return data as Task;
 		},
-		onSuccess: () => {
+		onSuccess: (task) => {
 			queryClient.invalidateQueries({
 				queryKey: boardKeys.columns(organizationId),
 			});
+			options?.onSuccess?.(task);
 		},
 	});
 }
 
-export function useDeleteTask(organizationId: string) {
+export function useDeleteTask(
+	organizationId: string,
+	options?: {
+		onSuccess?: (id: string) => void;
+	},
+) {
 	const queryClient = useQueryClient();
 
 	return useMutation({
@@ -77,17 +95,23 @@ export function useDeleteTask(organizationId: string) {
 				throw new Error("Failed to delete task");
 			}
 
-			return { success: true };
+			return id;
 		},
-		onSuccess: () => {
+		onSuccess: (id) => {
 			queryClient.invalidateQueries({
 				queryKey: boardKeys.columns(organizationId),
 			});
+			options?.onSuccess?.(id);
 		},
 	});
 }
 
-export function useMoveTask(organizationId: string) {
+export function useMoveTask(
+	organizationId: string,
+	options?: {
+		onSuccess?: (task: Task, input: MoveTaskInput) => void;
+	},
+) {
 	const queryClient = useQueryClient();
 
 	return useMutation({
@@ -98,12 +122,38 @@ export function useMoveTask(organizationId: string) {
 				throw new Error("Failed to move task");
 			}
 
-			return data as Task;
+			return { task: data as Task, input };
 		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({
-				queryKey: boardKeys.columns(organizationId),
-			});
+		onSuccess: ({ task, input }) => {
+			// Update cache directly to avoid refetch flicker
+			queryClient.setQueryData(
+				boardKeys.columns(organizationId),
+				(oldData: Column[] | undefined) => {
+					if (!oldData) return oldData;
+
+					return oldData.map((col) => {
+						// Remove task from source column
+						if (col.tasks.some((t) => t.id === input.taskId)) {
+							return {
+								...col,
+								tasks: col.tasks.filter((t) => t.id !== input.taskId),
+							};
+						}
+						// Add task to target column
+						if (col.id === input.columnId) {
+							const newTasks = [...col.tasks];
+							const insertIndex = Math.min(input.order, newTasks.length);
+							newTasks.splice(insertIndex, 0, task);
+							return {
+								...col,
+								tasks: newTasks.map((t, idx) => ({ ...t, order: idx })),
+							};
+						}
+						return col;
+					});
+				},
+			);
+			options?.onSuccess?.(task, input);
 		},
 	});
 }
@@ -121,12 +171,36 @@ export function useReorderTasks(organizationId: string) {
 				throw new Error("Failed to reorder tasks");
 			}
 
-			return { success: true };
+			return tasks;
 		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({
-				queryKey: boardKeys.columns(organizationId),
-			});
+		onSuccess: (reorderedTasks) => {
+			// Update cache directly to avoid refetch flicker
+			queryClient.setQueryData(
+				boardKeys.columns(organizationId),
+				(oldData: Column[] | undefined) => {
+					if (!oldData) return oldData;
+
+					const taskOrderMap = new Map(
+						reorderedTasks.map((t) => [t.id, t.order]),
+					);
+					const columnId = reorderedTasks[0]?.columnId;
+
+					return oldData.map((col) => {
+						if (col.id === columnId) {
+							const sortedTasks = [...col.tasks].sort((a, b) => {
+								const orderA = taskOrderMap.get(a.id) ?? a.order;
+								const orderB = taskOrderMap.get(b.id) ?? b.order;
+								return orderA - orderB;
+							});
+							return {
+								...col,
+								tasks: sortedTasks.map((t, idx) => ({ ...t, order: idx })),
+							};
+						}
+						return col;
+					});
+				},
+			);
 		},
 	});
 }

@@ -1,5 +1,4 @@
 import { useLabels } from "~/hooks/use-labels";
-import { Sidebar } from "../board";
 import { Button } from "../ui/button";
 import { useMemo, useState } from "react";
 import { CreateLabelModal } from "./create-label-modal";
@@ -68,7 +67,6 @@ export function LabelsTable({ organizationId }: LabelsTableProps) {
 
   return (
     <div className="flex h-screen bg-background">
-				<Sidebar />
 
 				<main className="flex flex-1 flex-col gap-5 overflow-hidden p-5">
         <LabelsHeader
