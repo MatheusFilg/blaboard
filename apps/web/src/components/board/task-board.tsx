@@ -30,6 +30,7 @@ import {
   useReorderColumns,
   useReorderTasks,
   useUpdateColumn,
+  useWebSocket,
 } from "~/hooks/board";
 import type {
   Column,
@@ -44,7 +45,6 @@ import { CreateTaskModal } from "./create-task-modal";
 import { DraggableTaskCard } from "./draggable-task-card";
 import { EmptyBoard } from "./empty-board";
 import { KanbanColumn } from "./kanban-column";
-import { Sidebar } from "./sidebar";
 
 interface TaskBoardProps {
   organizationId: string;
@@ -87,14 +87,76 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
   const lastMoveRef = useRef<{ taskId: string; columnId: string } | null>(null);
 
   const { data: columns = [], isLoading, error } = useColumns(organizationId);
-  const createTaskMutation = useCreateTask(organizationId);
-  const createColumnMutation = useCreateColumn(organizationId);
-  const updateColumnMutation = useUpdateColumn(organizationId);
-  const deleteColumnMutation = useDeleteColumn(organizationId);
+  
+  const {
+    sendTaskCreated,
+    sendTaskUpdated,
+    sendTaskDeleted,
+    sendTaskMoved,
+    sendColumnCreated,
+    sendColumnUpdated,
+    sendColumnDeleted,
+    sendColumnsReordered,
+    isConnected,
+  } = useWebSocket({
+    organizationId,
+    enabled: true,
+  });
+
+  const createTaskMutation = useCreateTask(organizationId, {
+    onSuccess: (task) => {
+      sendTaskCreated({
+        taskId: task.id,
+        columnId: task.columnId,
+        title: task.title,
+      });
+    },
+  });
+
+  const createColumnMutation = useCreateColumn(organizationId, {
+    onSuccess: (column) => {
+      sendColumnCreated({
+        columnId: column.id,
+        name: column.name,
+      });
+    },
+  });
+
+  const updateColumnMutation = useUpdateColumn(organizationId, {
+    onSuccess: (column) => {
+      sendColumnUpdated({
+        columnId: column.id,
+      });
+    },
+  });
+
+  const deleteColumnMutation = useDeleteColumn(organizationId, {
+    onSuccess: (id) => {
+      sendColumnDeleted({
+        columnId: id,
+      });
+    },
+  });
+
   const createDefaultColumnsMutation = useCreateDefaultColumns(organizationId);
-  const moveTaskMutation = useMoveTask(organizationId);
+  
+  const reorderColumnsMutation = useReorderColumns(organizationId, {
+    onSuccess: (columns) => {
+      sendColumnsReordered({ columns });
+    },
+  });
+
+  const moveTaskMutation = useMoveTask(organizationId, {
+    onSuccess: (task, input) => {
+      sendTaskMoved({
+        taskId: input.taskId,
+        columnId: input.columnId,
+        order: input.order,
+      });
+    },
+  });
+
   const reorderTasksMutation = useReorderTasks(organizationId);
-  const reorderColumnsMutation = useReorderColumns(organizationId);
 
   useEffect(() => {
     if (!activeTask && !activeColumn && !isPendingMutation.current) {
@@ -298,7 +360,7 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
   );
 
   const handleDragEnd = useCallback(
-    async (event: DragEndEvent) => {
+    (event: DragEndEvent) => {
       const { active } = event;
       const activeData = active.data.current;
 
@@ -320,22 +382,27 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
         const currentIndex = localColumns.findIndex((c) => c.id === column.id);
 
         if (currentIndex !== startIndex) {
-          // Reorder columns on server
           const reorderedColumns = localColumns.map((col, index) => ({
             id: col.id,
             order: index,
           }));
 
-          try {
-            await reorderColumnsMutation.mutateAsync(reorderedColumns);
-            toast.success("Columns reordered successfully");
-          } catch {
-            toast.error("Failed to reorder columns");
-            setLocalColumns(columns);
-          }
+          reorderColumnsMutation.mutate(reorderedColumns, {
+            onSuccess: () => {
+              toast.success("Columns reordered successfully");
+            },
+            onError: () => {
+              toast.error("Failed to reorder columns");
+              setLocalColumns(columns);
+            },
+            onSettled: () => {
+              isPendingMutation.current = false;
+            },
+          });
+        } else {
+          isPendingMutation.current = false;
         }
 
-        isPendingMutation.current = false;
         return;
       }
 
@@ -376,16 +443,26 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
       }
 
       if (columnChanged) {
-        try {
-          await moveTaskMutation.mutateAsync({
+        moveTaskMutation.mutate(
+          {
             taskId: activeId,
             columnId: currentColumn.id,
             order: currentIndex,
-          });
-        } catch {
-          toast.error("Failed to move task");
-          setLocalColumns(columns);
-        }
+          },
+          {
+            onSuccess: () => {
+              toast.success("Task moved successfully");
+            },
+            onError: () => {
+              toast.error("Failed to move task");
+              setLocalColumns(columns);
+            },
+            onSettled: () => {
+              isPendingMutation.current = false;
+              lastMoveRef.current = null;
+            },
+          },
+        );
       } else if (indexChanged) {
         const reorderedTasks = currentColumn.tasks.map((task, index) => ({
           id: task.id,
@@ -393,23 +470,24 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
           columnId: currentColumn.id,
         }));
 
-        try {
-          await reorderTasksMutation.mutateAsync(reorderedTasks);
-        } catch {
-          toast.error("Failed to reorder tasks");
-          setLocalColumns(columns);
-        }
+        reorderTasksMutation.mutate(reorderedTasks, {
+          onError: () => {
+            toast.error("Failed to reorder tasks");
+            setLocalColumns(columns);
+          },
+          onSettled: () => {
+            isPendingMutation.current = false;
+            lastMoveRef.current = null;
+          },
+        });
       }
-
-      isPendingMutation.current = false;
-      lastMoveRef.current = null;
     },
     [
       columns,
       localColumns,
       moveTaskMutation,
-      reorderTasksMutation,
       reorderColumnsMutation,
+      reorderTasksMutation,
     ],
   );
 
@@ -488,7 +566,7 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
+      <div className="flex flex-1 items-center justify-center">
         <div className="text-muted-foreground">Loading board...</div>
       </div>
     );
@@ -496,96 +574,92 @@ export function TaskBoard({ organizationId, userId }: TaskBoardProps) {
 
   if (error) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
+      <div className="flex flex-1 items-center justify-center">
         <div className="text-destructive">{error.message}</div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      <Sidebar />
-
-      <main className="flex flex-1 flex-col gap-5 overflow-hidden p-5">
-        <BoardHeader
-          title="Project Overview"
-          subtitle={`${totalTasks} tasks · ${columns.length} columns`}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          onNewTask={() => setIsModalOpen(true)}
+    <div className="flex flex-1 flex-col gap-5 overflow-hidden p-5">
+      <BoardHeader
+        title="Project Overview"
+        subtitle={`${totalTasks} tasks · ${columns.length} columns`}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onNewTask={() => setIsModalOpen(true)}
         />
 
-        {localColumns.length === 0 ? (
-          <EmptyBoard
-            onCreateDefaultColumns={handleCreateDefaultColumns}
-            isLoading={createDefaultColumnsMutation.isPending}
-          />
-        ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={pointerWithin}
-            measuring={measuring}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDragEnd={handleDragEnd}
-            onDragCancel={handleDragCancel}
+      {localColumns.length === 0 ? (
+        <EmptyBoard
+          onCreateDefaultColumns={handleCreateDefaultColumns}
+          isLoading={createDefaultColumnsMutation.isPending}
+        />
+      ) : (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={pointerWithin}
+          measuring={measuring}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+        >
+          <SortableContext
+            items={columnIds}
+            strategy={horizontalListSortingStrategy}
           >
-            <SortableContext
-              items={columnIds}
-              strategy={horizontalListSortingStrategy}
-            >
-              <div className="flex flex-1 gap-4 overflow-x-auto pb-4">
-                {filteredColumns.map((column) => (
-                  <KanbanColumn
-                    key={column.id}
-                    column={column}
-                    onDelete={handleDeleteColumn}
-                    onUpdate={handleUpdateColumn}
-                  />
-                ))}
-                <AddColumn
-                  onAdd={handleCreateColumn}
-                  isLoading={createColumnMutation.isPending}
+            <div className="flex flex-1 gap-4 overflow-x-auto pb-4">
+              {filteredColumns.map((column) => (
+                <KanbanColumn
+                  key={column.id}
+                  column={column}
+                  onDelete={handleDeleteColumn}
+                  onUpdate={handleUpdateColumn}
+                />
+              ))}
+              <AddColumn
+                onAdd={handleCreateColumn}
+                isLoading={createColumnMutation.isPending}
+              />
+            </div>
+          </SortableContext>
+
+          <DragOverlay dropAnimation={null}>
+            {activeTask && (
+              <div className="rotate-1 scale-[1.02] cursor-grabbing opacity-95 shadow-lg">
+                <DraggableTaskCard
+                  task={activeTask}
+                  isCompleted={
+                    findColumnByTaskId(activeTask.id)?.isCompleted ?? false
+                  }
                 />
               </div>
-            </SortableContext>
-
-            <DragOverlay dropAnimation={null}>
-              {activeTask && (
-                <div className="rotate-1 scale-[1.02] cursor-grabbing opacity-95 shadow-lg">
-                  <DraggableTaskCard
-                    task={activeTask}
-                    isCompleted={
-                      findColumnByTaskId(activeTask.id)?.isCompleted ?? false
-                    }
-                  />
+            )}
+            {activeColumn && (
+              <div className="w-64 rotate-1 scale-[1.02] cursor-grabbing rounded-lg border border-border/50 bg-card/80 p-3 opacity-95 shadow-lg backdrop-blur-sm">
+                <div className="flex items-center gap-2 pb-2">
+                  {activeColumn.color && (
+                    <div
+                      className="size-2 rounded-full"
+                      style={{ backgroundColor: activeColumn.color }}
+                    />
+                  )}
+                  <span className="font-medium text-foreground text-sm">
+                    {activeColumn.name}
+                  </span>
+                  <span className="text-muted-foreground text-xs">
+                    {activeColumn.tasks.length}
+                  </span>
                 </div>
-              )}
-              {activeColumn && (
-                <div className="w-64 rotate-1 scale-[1.02] cursor-grabbing rounded-lg border border-border/50 bg-card/80 p-3 opacity-95 shadow-lg backdrop-blur-sm">
-                  <div className="flex items-center gap-2 pb-2">
-                    {activeColumn.color && (
-                      <div
-                        className="size-2 rounded-full"
-                        style={{ backgroundColor: activeColumn.color }}
-                      />
-                    )}
-                    <span className="font-medium text-foreground text-sm">
-                      {activeColumn.name}
-                    </span>
-                    <span className="text-muted-foreground text-xs">
-                      {activeColumn.tasks.length}
-                    </span>
-                  </div>
-                  <div className="flex min-h-[60px] items-center justify-center rounded-lg bg-accent/30 text-muted-foreground text-xs">
-                    {activeColumn.tasks.length} tasks
-                  </div>
+                <div className="flex min-h-[60px] items-center justify-center rounded-lg bg-accent/30 text-muted-foreground text-xs">
+                  {activeColumn.tasks.length} tasks
                 </div>
-              )}
-            </DragOverlay>
-          </DndContext>
-        )}
-      </main>
+              </div>
+            )}
+          </DragOverlay>
+        </DndContext>
+      )}
 
       <CreateTaskModal
         isOpen={isModalOpen}
