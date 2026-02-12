@@ -2,13 +2,14 @@ import { useLabels } from "~/hooks/use-labels";
 import { Button } from "../ui/button";
 import { useMemo, useState } from "react";
 import { CreateLabelModal } from "./create-label-modal";
-import type { CreateLabelInput } from "~/lib/types";
+import type { CreateLabelInput, TaskLabel, UpdateLabelInput } from "~/lib/types";
 import { toast } from "sonner";
-import { useCreateLabel, useDeleteLabel } from "~/hooks/labels/use-labels-mutations";
+import { useCreateLabel, useDeleteLabel, useUpdateLabel } from "~/hooks/labels/use-labels-mutations";
 import { LabelsHeader } from "./labels-header";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { DotsThreeIcon, PencilIcon, TrashIcon } from "@phosphor-icons/react";
 import { DeleteLabelModal } from "./delete-label-modal";
+import { EditLabelModal } from "./edit-label-modal";
 
 interface LabelsTableProps {
   organizationId: string;
@@ -19,10 +20,13 @@ export function LabelsTable({ organizationId }: LabelsTableProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedLabelId, setSelectedLabelId] = useState<string | null>(null);
+  const [labelToEdit, setLabelToEdit] = useState<TaskLabel | null>(null);
   
   const deleteLabelMutation = useDeleteLabel(organizationId)
   const createLabelMutation = useCreateLabel(organizationId)
+  const updateLabelMutation = useUpdateLabel(organizationId)
   
   const filteredLabels = useMemo(() => {
      if (!labels) return []
@@ -54,6 +58,18 @@ export function LabelsTable({ organizationId }: LabelsTableProps) {
       toast.error("Failed to delete label");
     }
   };
+  
+  const handleEditLabel = async (id: string, input: UpdateLabelInput) => {
+    try {
+      await updateLabelMutation.mutateAsync({
+        id,
+        input,
+      });
+      toast.success("Label updated successfully");
+    } catch {
+      toast.error("Failed to update label");
+    }
+  }
   
   function formatDate(date: Date | string | null): string {
     if (!date) return "Not set";
@@ -133,7 +149,11 @@ export function LabelsTable({ organizationId }: LabelsTableProps) {
                           />
                           <DropdownMenuContent align="end" className="rounded-sm">
                             <DropdownMenuItem
-                              onSelect={(e) => e.preventDefault()}
+                            onClick={(e) => {
+                                e.preventDefault()
+                                setLabelToEdit(label)
+                                setIsEditModalOpen(true)
+                              }}
                               variant="default"
                             >
                               <PencilIcon className="size-5" />
@@ -174,6 +194,15 @@ export function LabelsTable({ organizationId }: LabelsTableProps) {
         onClose={() => {
           setIsDeleteModalOpen(false)
           setSelectedLabelId(null)
+        }}
+      />
+      
+      <EditLabelModal
+        label={labelToEdit}
+        onSubmit={handleEditLabel}
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false)
         }}
       />
 			</div>

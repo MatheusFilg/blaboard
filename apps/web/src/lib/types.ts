@@ -15,6 +15,11 @@ export interface CreateLabelInput {
 	organizationId: string
 }
 
+export interface UpdateLabelInput {
+	text?: string;
+  color?: string;
+}
+
 export interface TaskLabel {
 	id: string;
 	text: string;
