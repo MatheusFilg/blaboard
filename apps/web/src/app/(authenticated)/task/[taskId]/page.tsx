@@ -233,11 +233,11 @@ export default function TaskDetailsPage({ params }: PageProps) {
                 {task.labels.map((label) => (
                   <div
                     key={label.text}
-                    className="flex h-7 items-center rounded-md px-3"
+                    className="flex h-7 max-w-30 items-center rounded-md px-3 transition-all duration-300 hover:max-w-100"
                     style={{ backgroundColor: `${label.color}15` }}
                   >
                     <span
-                      className="font-medium text-xs"
+                      className="truncate font-medium text-xs"
                       style={{ color: label.color }}
                     >
                       {label.text}
