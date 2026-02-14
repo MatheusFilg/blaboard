@@ -15,7 +15,7 @@ export const createTaskBodySchema = z.object({
 	description: z.string().optional(),
 	priority: taskPrioritySchema.optional().default("NONE"),
 	dueDate: z.string().datetime().optional(),
-	labels: z.array(z.string()).optional().default([]),
+	labels: z.array(taskLabelSchema).optional().default([]),
 	columnId: z.string().min(1),
 	assigneeId: z.string().optional(),
 });
