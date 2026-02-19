@@ -1,6 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "~/lib/api";
-import type { CreateLabelInput, TaskLabel, UpdateLabelInput } from "~/lib/types";
+import type {
+	CreateLabelInput,
+	TaskLabel,
+	UpdateLabelInput,
+} from "~/lib/types";
 import { labelsKeys } from "./keys";
 
 export function useCreateLabel(organizationId: string) {
@@ -14,7 +18,7 @@ export function useCreateLabel(organizationId: string) {
 			});
 
 			if (error) {
-				throw new Error("Failed to create task");
+				throw new Error("Failed to create label");
 			}
 
 			return data as TaskLabel;
@@ -32,7 +36,7 @@ export function useDeleteLabel(organizationId: string) {
 
 	return useMutation({
 		mutationFn: async (id: string) => {
-			const { error } = await api.labels({id}).delete();
+			const { error } = await api.labels({ id }).delete();
 
 			if (error) {
 				throw new Error("Failed to delete label");
@@ -51,9 +55,15 @@ export function useDeleteLabel(organizationId: string) {
 export function useUpdateLabel(organizationId: string) {
 	const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async ({id, input}: {id: string, input: UpdateLabelInput}) => {
-			const { data ,error } = await api.labels({ id }).patch(input);
+	return useMutation({
+		mutationFn: async ({
+			id,
+			input,
+		}: {
+			id: string;
+			input: UpdateLabelInput;
+		}) => {
+			const { data, error } = await api.labels({ id }).patch(input);
 
 			if (error) {
 				throw new Error("Failed to update label");
@@ -64,7 +74,7 @@ export function useUpdateLabel(organizationId: string) {
 		onSuccess: () => {
 			queryClient.invalidateQueries({
 				queryKey: labelsKeys.labels(organizationId),
-      });
+			});
 		},
 	});
 }

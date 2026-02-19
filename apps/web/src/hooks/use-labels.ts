@@ -2,7 +2,6 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { api } from "~/lib/api";
-import type { TaskLabel } from "~/lib/types";
 import { labelsKeys } from "./labels/keys";
 
 export function useLabels(organizationId: string) {
@@ -15,7 +14,7 @@ export function useLabels(organizationId: string) {
 				throw new Error("Failed to fetch labels");
 			}
 
-			return (data ?? []) as TaskLabel[];
+			return (data ?? []);
 		},
 		enabled: !!organizationId,
 	});

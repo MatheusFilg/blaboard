@@ -1,7 +1,7 @@
 import { prisma } from "@blaboard/db";
 
 export async function getLabelsUseCase(organizationId: string) {
-	const label = await prisma.label.findMany({
+	const labels = await prisma.label.findMany({
 		where: {
 			organizationId,
 		},
@@ -15,5 +15,5 @@ export async function getLabelsUseCase(organizationId: string) {
 		},
 	});
 
-	return label;
+	return labels;
 }

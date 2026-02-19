@@ -1,5 +1,3 @@
-// em: apps/web/src/components/board/label-selector.tsx
-
 import { CheckIcon, PlusIcon } from "@phosphor-icons/react";
 import {
 	DropdownMenu,
@@ -24,22 +22,22 @@ export function LabelSelector({
 }: LabelSelectorProps) {
 	return (
 		<DropdownMenu>
-      <DropdownMenuTrigger render={
-        <Button
-          variant="outline"
-					className="flex h-6 items-center gap-1 rounded border border-border border-dashed px-2 text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
-				>
-					<PlusIcon size={12} />
-					<span className="text-xs">Add label</span>
-				</Button>
-			}>
-				
-			</DropdownMenuTrigger>
+			<DropdownMenuTrigger
+				render={
+					<Button
+						variant="outline"
+						className="flex h-6 items-center gap-1 rounded border border-border border-dashed px-2 text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+					>
+						<PlusIcon size={12} />
+						<span className="text-xs">Add label</span>
+					</Button>
+				}
+			/>
 			<DropdownMenuContent className="w-60 rounded-lg border-border bg-popover p-1">
 				<DropdownMenuGroup>
 					{allLabels.length === 0 ? (
-						<div className="px-2 py-1.5 text-sm text-muted-foreground">
-							Nenhuma label encontrada.
+						<div className="px-2 py-1.5 text-muted-foreground text-sm">
+							No labels found.
 						</div>
 					) : (
 						allLabels.map((label) => {
@@ -60,7 +58,9 @@ export function LabelSelector({
 										/>
 										<span className="text-sm">{label.text}</span>
 									</div>
-									{isSelected && <CheckIcon size={14} className="text-foreground" />}
+									{isSelected && (
+										<CheckIcon size={14} className="text-foreground" />
+									)}
 								</DropdownMenuItem>
 							);
 						})

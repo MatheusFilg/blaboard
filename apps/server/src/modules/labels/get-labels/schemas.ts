@@ -1,5 +1,4 @@
 import z from "zod";
-import { apiErrorSchema } from "@/shared/schemas/api-error";
 import { zDate } from "@/shared/schemas/zod-date";
 import { zHexColor } from "@/shared/schemas/zod-hex-color";
 
@@ -20,6 +19,3 @@ export const getLabelsResponseSchema = z.array(
 		updatedAt: zDate,
 	}),
 );
-
-export const getLabelsNotFoundResponseSchema =
-	apiErrorSchema("Labels not found");

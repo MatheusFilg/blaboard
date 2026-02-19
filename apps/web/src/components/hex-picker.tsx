@@ -27,7 +27,6 @@ export function HexPicker({ color, setColor }: HexPickerProps) {
   
     const handleColorChange = (newColor: Color) => {
       const hexString = newColor.toFormat('rgb').toString('hex');
-      console.log(hexString)
       setColor(parseColor(hexString));
     };
   
@@ -49,7 +48,7 @@ export function HexPicker({ color, setColor }: HexPickerProps) {
               colorSpace="hsb"
               xChannel="saturation"
               yChannel="brightness"
-              aria-label="Seletor de saturação e brilho"
+              aria-label="Saturation and brightness selector"
               className="h-41 w-48 rounded-md border shadow-sm"
             >
               <ColorThumb className="z-50" />
@@ -58,7 +57,7 @@ export function HexPicker({ color, setColor }: HexPickerProps) {
             <ColorSlider 
               colorSpace="hsb" 
               channel="hue" 
-              aria-label="Seletor de matiz"
+              aria-label="Hue selector"
             >
               <SliderTrack className="h-5 w-48 rounded-full">
                 <ColorThumb className="top-1/2 size-4" />
@@ -68,7 +67,7 @@ export function HexPicker({ color, setColor }: HexPickerProps) {
 
           <ColorField 
             className="flex w-48 flex-col gap-1"
-            aria-label="Campo de cor hexadecimal"
+            aria-label="Hexadecimal color field"
           >
             <Label className="text-xs font-medium text-muted-foreground">Hex</Label>
             <Input 
@@ -79,7 +78,7 @@ export function HexPicker({ color, setColor }: HexPickerProps) {
 
           <ColorSwatchPicker 
             className="flex w-48 flex-wrap gap-2"
-            aria-label="Cores predefinidas"
+            aria-label="Predefined Colors"
             onChange={handleColorChange}
           >
             <ColorSwatchPickerItem color="#F00">
