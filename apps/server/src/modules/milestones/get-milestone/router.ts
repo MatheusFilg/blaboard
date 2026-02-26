@@ -1,4 +1,4 @@
-import Elysia from "elysia";
+import { Elysia } from "elysia";
 import { authMiddleware } from "@/shared/http/middleware/auth.middleware";
 import { authMiddlewareErrorSchemas } from "@/shared/schemas/auth-middleware-errors";
 import {
