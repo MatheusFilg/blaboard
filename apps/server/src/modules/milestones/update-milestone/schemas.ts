@@ -5,7 +5,7 @@ export const updateMilestonesParamsSchema = z.object({
 	id: z.string().min(1),
 });
 
-const milestoneStatusSchema = z.enum([
+const milestonesStatusSchema = z.enum([
 	"PLANNED",
 	"ACTIVE",
 	"COMPLETED",
@@ -15,7 +15,7 @@ const milestoneStatusSchema = z.enum([
 export const updateMilestonesBodySchema = z.object({
 	name: z.string().min(2).max(100).optional(),
 	description: z.string().min(2).max(200).optional(),
-	status: milestoneStatusSchema.optional(),
+	status: milestonesStatusSchema.optional(),
 	startDate: zDate.optional(),
 	endDate: zDate.optional(),
 	taskIds: z.array(z.string()).optional(),

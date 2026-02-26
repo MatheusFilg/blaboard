@@ -6,7 +6,7 @@ const taskMilestonesSchema = z.object({
 	title: z.string(),
 });
 
-const milestoneStatusSchema = z.enum([
+const milestonesStatusSchema = z.enum([
 	"PLANNED",
 	"ACTIVE",
 	"COMPLETED",
@@ -18,7 +18,7 @@ export const getMilestonesResponseSchema = z.array(
 		id: z.string(),
 		name: z.string(),
 		description: z.string().nullable(),
-		status: milestoneStatusSchema,
+		status: milestonesStatusSchema,
 		startDate: zDate.nullable(),
 		endDate: zDate.nullable(),
 		tasks: z.array(taskMilestonesSchema),
