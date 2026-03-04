@@ -1,11 +1,6 @@
 import z from "zod";
 import { zDate } from "@/shared/schemas/zod-date";
 
-const taskMilestoneSchema = z.object({
-	id: z.string(),
-	title: z.string(),
-});
-
 const milestonesStatusSchema = z.enum([
 	"PLANNED",
 	"ACTIVE",
@@ -24,7 +19,6 @@ export const getMilestoneResponseSchema = z.object({
 	status: milestonesStatusSchema,
 	startDate: zDate.nullable(),
 	endDate: zDate.nullable(),
-	tasks: z.array(taskMilestoneSchema),
 	taskIds: z.array(z.string()),
 	organizationId: z.string(),
 	createdAt: zDate,
