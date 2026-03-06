@@ -1,4 +1,5 @@
 import { Elysia } from "elysia";
+import { assignTasksMilestoneRouter } from "./assign-tasks-milestone/router";
 import { createMilestoneRouter } from "./create-milestone/router";
 import { deleteMilestonesRouter } from "./delete-milestone/router";
 import { getMilestoneRouter } from "./get-milestone/router";
@@ -16,4 +17,5 @@ export const milestonesRouter = new Elysia({
 	updateMilestonesRouter,
 	deleteMilestonesRouter,
 	getMilestoneTasksRouter,
+	assignTasksMilestoneRouter,
 ]);

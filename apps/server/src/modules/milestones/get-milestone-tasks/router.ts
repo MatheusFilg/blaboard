@@ -5,6 +5,7 @@ import {
 } from "@/modules/milestones/get-milestone-tasks/schemas";
 import { authMiddleware } from "@/shared/http/middleware/auth.middleware";
 import { getMilestoneTasks } from "./use-case";
+import { authMiddlewareErrorSchemas } from "@/shared/schemas/auth-middleware-errors";
 
 export const getMilestoneTasksRouter = new Elysia().use(authMiddleware).get(
 	":id/tasks",
@@ -18,6 +19,9 @@ export const getMilestoneTasksRouter = new Elysia().use(authMiddleware).get(
   {
     requireOrganization: true,
 		params: getMilestoneTasksParamsSchema,
-		response: getMilestoneTasksResponseSchema,
+    response: {
+      200: getMilestoneTasksResponseSchema,
+      ...authMiddlewareErrorSchemas
+		},
 	},
 );
