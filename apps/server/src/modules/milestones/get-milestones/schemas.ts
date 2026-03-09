@@ -22,6 +22,7 @@ export const getMilestonesResponseSchema = z.array(
 		startDate: zDate.nullable(),
 		endDate: zDate.nullable(),
 		tasks: z.array(taskMilestonesSchema),
+		progress: z.number().min(0).max(100),
 		taskIds: z.array(z.string()),
 		organizationId: z.string(),
 		createdAt: zDate,

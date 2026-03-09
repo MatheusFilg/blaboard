@@ -18,6 +18,7 @@ export const getMilestoneResponseSchema = z.object({
 	description: z.string().nullable(),
 	status: milestonesStatusSchema,
 	startDate: zDate.nullable(),
+	progress: z.number().min(0).max(100),
 	endDate: zDate.nullable(),
 	taskIds: z.array(z.string()),
 	organizationId: z.string(),
