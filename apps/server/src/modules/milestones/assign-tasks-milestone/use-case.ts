@@ -7,25 +7,24 @@ export async function assignTasksMilestone(
 	input: AssignTasksMilestoneBody,
 ) {
 	return await prisma.$transaction(async (tx) => {
-		const updatedTasks = await tx.task.updateMany({
+		await tx.task.updateMany({
 			where: {
 				id: { in: input.taskIds },
 				organizationId,
 			},
 			data: {
-				milestoneId,
+				milestoneId: milestoneId,
 			},
 		});
 
-		await tx.milestone.update({
+		return await tx.milestone.update({
 			where: {
 				id: milestoneId,
+				organizationId,
 			},
 			data: {
-				taskIds: input.taskIds,
+				taskIds: { push: input.taskIds },
 			},
 		});
-
-		return updatedTasks;
 	});
 }
