@@ -21,5 +21,29 @@ export async function deleteTaskUseCase(id: string, organizationId: string) {
 			},
 		});
 	}
+
+	if (task.labelIds.length > 0) {
+		for (const labelId of task.labelIds) {
+			const label = await prisma.label.findUnique({
+				where: {
+					id: labelId,
+				},
+				select: {
+					taskIds: true,
+				},
+			});
+
+			if (label) {
+				await prisma.label.update({
+					where: { id: labelId },
+					data: {
+						taskIds: {
+							set: label.taskIds.filter((taskId) => taskId !== id),
+						},
+					},
+				});
+			}
+		}
+	}
 	return task;
 }
