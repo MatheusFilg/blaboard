@@ -8,13 +8,28 @@ const milestonesStatusSchema = z.enum([
 	"CANCELLED",
 ]);
 
-export const createMilestonesBodySchema = z.object({
-	name: z.string().min(2).max(100),
-	description: z.string().min(2).max(200).nullable(),
-	status: milestonesStatusSchema,
-	startDate: zDate.nullable(),
-	endDate: zDate.nullable(),
-});
+export const createMilestonesBodySchema = z
+	.object({
+		name: z.string().min(2).max(100),
+		description: z.string().min(2).max(200).nullable(),
+		status: milestonesStatusSchema,
+		startDate: zDate.nullable(),
+		endDate: zDate.nullable(),
+	})
+	.refine(
+		(data) => {
+			if (data.startDate && data.endDate) {
+				const start = new Date(data.startDate);
+				const end = new Date(data.endDate);
+				return end >= start;
+			}
+			return true;
+		},
+		{
+			message: "End date must be after or equal to start date",
+			path: ["endDate"],
+		},
+	);
 
 export type CreateMilestonesInput = z.infer<typeof createMilestonesBodySchema>;
 
